@@ -9,8 +9,8 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "The working tree must be clean before deploying." >&2
+if ! git diff-index --quiet HEAD --; then
+  echo "Tracked changes must be committed before deploying." >&2
   exit 1
 fi
 
