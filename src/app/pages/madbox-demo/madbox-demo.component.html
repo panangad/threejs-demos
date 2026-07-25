@@ -5,4 +5,11 @@
     <span class="hint">Drag to look around · Scroll to zoom</span>
   </nav>
   <canvas #canvas class="three-canvas"></canvas>
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Loading world…</p>
+  </div>
+  <div class="error-overlay" *ngIf="loadError">
+    <p>⚠️ Failed to load 3D assets</p>
+  </div>
 </div>

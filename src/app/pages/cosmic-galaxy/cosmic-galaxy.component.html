@@ -1,0 +1,262 @@
+<div
+  class="cosmic-galaxy-wrapper"
+  [style.--level-color]="level.color"
+  [style.--level-accent]="level.accent"
+  [style.--level-glow]="level.glow"
+  [class.is-traveling]="isTraveling"
+  [class.travel-forward]="travelDirection === 'forward'"
+  [class.travel-backward]="travelDirection === 'backward'"
+  [class.is-fullscreen]="isFullscreen">
+
+  <!-- ── Background Stars ── -->
+  <div class="stars-layer" aria-hidden="true">
+    <div
+      class="star"
+      *ngFor="let s of stars"
+      [style.left.%]="s.x"
+      [style.top.%]="s.y"
+      [style.width.px]="s.size"
+      [style.height.px]="s.size"
+      [style.opacity]="s.opacity"
+      [style.animation-duration]="s.twinkleSpeed + 's'"
+      [style.animation-delay]="s.delay + 's'">
+    </div>
+  </div>
+
+  <!-- ── Deep Nebula BG ── -->
+  <div class="nebula-bg" aria-hidden="true"></div>
+
+  <!-- ── Warp Travel Overlay ── -->
+  <div class="warp-overlay" [class.active]="isTraveling" aria-hidden="true">
+    <div class="warp-vignette"></div>
+    <div class="warp-tunnel">
+      <div class="wt-ring r1"></div>
+      <div class="wt-ring r2"></div>
+      <div class="wt-ring r3"></div>
+      <div class="wt-ring r4"></div>
+      <div class="wt-ring r5"></div>
+      <div class="wt-ring r6"></div>
+      <div class="wt-ring r7"></div>
+      <div class="wt-ring r8"></div>
+    </div>
+    <div class="warp-lines">
+      <div class="wl" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]"
+           [style.transform]="'rotate(' + (i * 30) + 'deg)'"></div>
+    </div>
+    <div class="warp-flash"></div>
+    <div class="warp-hud">
+      <div class="warp-label">WARP DRIVE ENGAGED</div>
+      <div class="warp-dest" *ngIf="!isTraveling || currentLevel < levels.length">
+        <ng-container *ngIf="travelDirection === 'forward' && currentLevel < levels.length - 1">
+          ⟶ {{ levels[currentLevel + 1]?.name }}
+        </ng-container>
+        <ng-container *ngIf="travelDirection === 'backward' && currentLevel > 0">
+          ⟵ {{ levels[currentLevel - 1]?.name }}
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main UI ── -->
+  <div class="main-ui" [class.fade-out]="isTraveling">
+
+    <!-- Top Nav Bar -->
+    <nav class="top-bar">
+      <a routerLink="/" class="exit-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span>Exit</span>
+      </a>
+
+      <div class="journey-nav">
+        <span class="journey-label">GALAXY CLUSTER ODYSSEY</span>
+        <div class="journey-track">
+          <div class="track-line">
+            <div class="track-fill" [style.width.%]="(currentLevel / (levels.length - 1)) * 100"></div>
+          </div>
+          <div
+            class="track-node"
+            *ngFor="let l of levels; let i = index"
+            [class.active]="i === currentLevel"
+            [class.visited]="i < currentLevel"
+            [title]="l.name"
+            (click)="jumpToLevel(i)">
+            <span class="node-label">{{ l.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="fs-btn" (click)="toggleFullscreen()" title="Toggle fullscreen (F)">
+        <svg *ngIf="!isFullscreen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+        <svg *ngIf="isFullscreen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+        </svg>
+      </button>
+    </nav>
+
+    <!-- Central Cluster Scene -->
+    <div class="scene-area">
+
+      <!-- Level number badge -->
+      <div class="level-badge">
+        <span class="lb-num">{{ currentLevel + 1 }}</span>
+        <span class="lb-sep">/</span>
+        <span class="lb-total">{{ levels.length }}</span>
+      </div>
+
+      <!-- The cluster visualization -->
+      <div class="cluster-wrap" [ngClass]="'type-' + level.type">
+
+        <!-- Outer halo rings -->
+        <div class="halo h1" aria-hidden="true"></div>
+        <div class="halo h2" aria-hidden="true"></div>
+        <div class="halo h3" aria-hidden="true"></div>
+
+        <!-- Galaxy particles in cluster -->
+        <div
+          class="g-particle"
+          *ngFor="let p of galaxyParticles"
+          [style.left.%]="p.x"
+          [style.top.%]="p.y"
+          [style.width.px]="p.size"
+          [style.height.px]="p.size"
+          [style.opacity]="p.opacity"
+          [style.background]="p.color"
+          [style.animation-delay]="p.delay + 's'"
+          aria-hidden="true">
+        </div>
+
+        <!-- Core structure -->
+        <div class="cluster-core">
+          <div class="core-glow"></div>
+
+          <!-- Irregular: show relativistic jets (Virgo/M87) -->
+          <ng-container *ngIf="level.type === 'irregular'">
+            <div class="jet jet-top"></div>
+            <div class="jet jet-bottom"></div>
+          </ng-container>
+
+          <!-- Regular: symmetric radio lobes (Perseus) -->
+          <ng-container *ngIf="level.type === 'regular'">
+            <div class="radio-lobe lobe-left"></div>
+            <div class="radio-lobe lobe-right"></div>
+          </ng-container>
+
+          <!-- Spherical: dark matter halos (Coma) -->
+          <ng-container *ngIf="level.type === 'spherical'">
+            <div class="dm-ring dm1"></div>
+            <div class="dm-ring dm2"></div>
+          </ng-container>
+
+          <!-- Elliptical: dominant giant galaxy (Abell 2029) -->
+          <ng-container *ngIf="level.type === 'elliptical'">
+            <div class="giant-ellipse ge1"></div>
+            <div class="giant-ellipse ge2"></div>
+          </ng-container>
+
+          <!-- Merging: two sub-clusters + shock wave (El Gordo) -->
+          <ng-container *ngIf="level.type === 'merging'">
+            <div class="sub-cluster sc-a"></div>
+            <div class="sub-cluster sc-b"></div>
+            <div class="shock-wave"></div>
+          </ng-container>
+
+          <div class="core-nucleus"></div>
+        </div>
+
+        <!-- Rotating structural arms -->
+        <div class="struct-layer" aria-hidden="true">
+          <div class="s-arm arm-a"></div>
+          <div class="s-arm arm-b"></div>
+          <div class="s-arm arm-c"></div>
+        </div>
+
+      </div><!-- /cluster-wrap -->
+
+      <!-- Cluster info (right side) -->
+      <div class="cluster-info-panel">
+        <div class="cip-type">{{ level.type | uppercase }} CLUSTER</div>
+        <h1 class="cip-name">{{ level.name }}</h1>
+        <p class="cip-subtitle">{{ level.subtitle }}</p>
+        <p class="cip-desc">{{ level.description }}</p>
+
+        <div class="cip-stats">
+          <div class="cs-item">
+            <span class="cs-icon">◎</span>
+            <div class="cs-data">
+              <span class="cs-label">Distance</span>
+              <span class="cs-val">{{ level.distance }}</span>
+            </div>
+          </div>
+          <div class="cs-item">
+            <span class="cs-icon">✦</span>
+            <div class="cs-data">
+              <span class="cs-label">Galaxies</span>
+              <span class="cs-val">{{ level.galaxyCount }}</span>
+            </div>
+          </div>
+          <div class="cs-item">
+            <span class="cs-icon">◷</span>
+            <div class="cs-data">
+              <span class="cs-label">Discovered</span>
+              <span class="cs-val">{{ level.discovered }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cip-funfact">
+          <span class="ff-star">★</span>
+          {{ level.funFact }}
+        </div>
+      </div>
+
+    </div><!-- /scene-area -->
+
+    <!-- Bottom Navigation -->
+    <div class="nav-bar">
+      <button
+        class="nav-btn btn-prev"
+        (click)="navigate(-1)"
+        [disabled]="currentLevel === 0 || isTraveling">
+        <span class="nb-arrow">←</span>
+        <div class="nb-text">
+          <span class="nb-dir">Previous</span>
+          <span class="nb-dest" *ngIf="currentLevel > 0">{{ levels[currentLevel - 1].name }}</span>
+        </div>
+      </button>
+
+      <div class="nav-status">
+        <div class="ns-dot" [class.orbiting]="!isTraveling" [class.warping]="isTraveling"></div>
+        <span class="ns-text">{{ isTraveling ? 'WARPING' : 'IN ORBIT' }}</span>
+        <div class="ns-keys">
+          <kbd>←</kbd> <kbd>→</kbd> Navigate &nbsp;
+          <kbd>F</kbd> Fullscreen
+        </div>
+      </div>
+
+      <button
+        class="nav-btn btn-next"
+        (click)="navigate(1)"
+        [disabled]="currentLevel === levels.length - 1 || isTraveling">
+        <div class="nb-text align-right">
+          <span class="nb-dir">Next</span>
+          <span class="nb-dest" *ngIf="currentLevel < levels.length - 1">{{ levels[currentLevel + 1].name }}</span>
+        </div>
+        <span class="nb-arrow">→</span>
+      </button>
+    </div>
+
+  </div><!-- /main-ui -->
+
+  <!-- Fullscreen CTA button (bottom-right corner, shows when not fullscreen) -->
+  <button class="fs-cta" *ngIf="!isFullscreen" (click)="enterFullscreen()" title="Enter Fullscreen">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
+    Fullscreen
+  </button>
+
+</div>

@@ -40,6 +40,29 @@
         <span class="cta">Launch →</span>
       </div>
     </a>
+
+    <a class="demo-card galaxy-card" routerLink="/cosmic-galaxy">
+      <div class="card-preview galaxy-preview">
+        <div class="gp-stars"></div>
+        <div class="gp-cluster c-virgo"></div>
+        <div class="gp-cluster c-coma"></div>
+        <div class="gp-cluster c-gordo"></div>
+        <div class="gp-warp-ring wr1"></div>
+        <div class="gp-warp-ring wr2"></div>
+        <div class="gp-particles">
+          <div class="pp" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]"></div>
+        </div>
+        <div class="gp-hud">
+          <span class="gp-hud-txt">LEVEL 1/5 · VIRGO CLUSTER</span>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="badge galaxy-badge">HTML · CSS</span>
+        <h2>Galaxy Cluster Odyssey</h2>
+        <p>Travel between 5 real galaxy clusters — Virgo, Perseus, Coma, Abell 2029 &amp; El Gordo — in a pure CSS/HTML experience.</p>
+        <span class="cta">Warp →</span>
+      </div>
+    </a>
   </main>
 
   <footer class="footer">

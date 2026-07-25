@@ -49,3 +49,34 @@
   width: 100% !important;
   height: 100% !important;
 }
+
+.loading-overlay, .error-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 100, 180, 0.6);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  gap: 16px;
+  z-index: 5;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-overlay { background: rgba(180, 30, 30, 0.6); }

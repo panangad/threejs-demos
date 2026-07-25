@@ -237,6 +237,123 @@
 
 .demo-card:hover .cta { letter-spacing: 2px; }
 
+.galaxy-card .badge.galaxy-badge { background: rgba(251,113,133,0.15); color: #fb7185; }
+.galaxy-card h2 { color: #fce7f3; }
+.galaxy-card .cta { color: #fb7185; }
+
+/* ---- Galaxy Cluster card preview ---- */
+.galaxy-preview {
+  background: radial-gradient(ellipse at 50% 50%, #110025 0%, #020008 100%);
+  overflow: hidden;
+
+  .gp-stars {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 8% 12%, white, transparent),
+      radial-gradient(1px 1px at 22% 70%, white, transparent),
+      radial-gradient(1px 1px at 65% 18%, white, transparent),
+      radial-gradient(1px 1px at 78% 55%, white, transparent),
+      radial-gradient(2px 2px at 40% 82%, rgba(200,180,255,0.7), transparent),
+      radial-gradient(1px 1px at 88% 30%, white, transparent),
+      radial-gradient(1px 1px at 15% 45%, rgba(200,230,255,0.8), transparent),
+      radial-gradient(1px 1px at 55% 60%, rgba(255,200,220,0.7), transparent),
+      radial-gradient(1px 1px at 92% 85%, white, transparent),
+      radial-gradient(1px 1px at 33% 28%, rgba(255,255,200,0.8), transparent);
+  }
+
+  .gp-cluster {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(10px);
+    animation: gp-cluster-pulse 4s ease-in-out infinite;
+
+    &.c-virgo {
+      width: 80px; height: 60px;
+      top: 25%; left: 20%;
+      background: radial-gradient(circle, rgba(192,132,252,0.8) 0%, rgba(109,40,217,0.4) 50%, transparent 80%);
+    }
+
+    &.c-coma {
+      width: 60px; height: 60px;
+      top: 40%; left: 55%;
+      background: radial-gradient(circle, rgba(45,212,191,0.8) 0%, rgba(15,76,58,0.4) 50%, transparent 80%);
+      animation-delay: 1.4s;
+    }
+
+    &.c-gordo {
+      width: 50px; height: 40px;
+      top: 60%; left: 35%;
+      background: radial-gradient(circle, rgba(251,113,133,0.8) 0%, rgba(127,29,29,0.4) 50%, transparent 80%);
+      animation-delay: 2.6s;
+    }
+  }
+
+  .gp-warp-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(192,132,252,0.4);
+    transform: translate(-50%, -50%);
+    animation: gp-ring-expand 3s ease-out infinite;
+
+    &.wr1 { width: 60px; height: 60px; }
+    &.wr2 { width: 60px; height: 60px; animation-delay: 1.5s; }
+  }
+
+  .gp-particles {
+    position: absolute; inset: 0;
+
+    .pp {
+      position: absolute;
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(192,132,252,0.7);
+      animation: gp-particle-float 6s ease-in-out infinite;
+
+      @for $i from 1 through 15 {
+        &:nth-child(#{$i}) {
+          left: random(80) * 1%;
+          top: random(80) * 1%;
+          animation-delay: $i * 0.4s;
+          width: (1 + random(3)) * 1px;
+          height: (1 + random(3)) * 1px;
+          opacity: 0.3 + random(7) * 0.1;
+        }
+      }
+    }
+  }
+
+  .gp-hud {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    .gp-hud-txt {
+      font-size: 0.52rem;
+      letter-spacing: 2px;
+      color: rgba(192,132,252,0.7);
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+    }
+  }
+}
+
+@keyframes gp-cluster-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.1); }
+}
+
+@keyframes gp-ring-expand {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(4);   opacity: 0; }
+}
+
+@keyframes gp-particle-float {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50%       { opacity: 1;   transform: translateY(-6px); }
+}
+
 .footer {
   text-align: center;
   padding: 20px;
