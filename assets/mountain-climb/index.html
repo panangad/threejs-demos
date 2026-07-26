@@ -900,16 +900,6 @@ const lbRows = CONFIG.players.map(p => {
   };
 });
 
-// ═══════════════════════════════════════════
-//  THEME / ACCENT UPDATER
-// ═══════════════════════════════════════════
-const root = document.documentElement;
-let curA   = new THREEColor(CONFIG.levels[0].accent);
-let curA2  = new THREEColor(CONFIG.levels[0].accent2);
-let tgtA   = curA.clone();
-let tgtA2  = curA2.clone();
-let curLvIdx = 0;
-
 // Minimal Color class mimicking THREE.js Color lerp for 2D transitions
 function THREEColor(hex) {
   this.set(hex);
@@ -939,6 +929,16 @@ THREEColor.prototype = {
     return `${r}${g}${b}`;
   }
 };
+
+// ═══════════════════════════════════════════
+//  THEME / ACCENT UPDATER
+// ═══════════════════════════════════════════
+const root = document.documentElement;
+let curA   = new THREEColor(CONFIG.levels[0].accent);
+let curA2  = new THREEColor(CONFIG.levels[0].accent2);
+let tgtA   = curA.clone();
+let tgtA2  = curA2.clone();
+let curLvIdx = 0;
 
 function setTheme(lv, lvIdx) {
   tgtA.set(lv.accent);
