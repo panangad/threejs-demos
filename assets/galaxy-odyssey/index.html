@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galaxy Cluster Odyssey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS vars (set by JS per level) ────────────────────────────── */
+    :root {
+      --accent:    #4aeeff;
+      --accent2:   #88ffff;
+      --dim:       rgba(74,238,255,0.22);
+      --glow:      rgba(74,238,255,0.28);
+      --chip-bg:   rgba(4,10,32,0.82);
+      --chip-br:   3rem;
+      --prog:      linear-gradient(90deg,#4aeeff,#88ffff);
+    }
+    [data-lv="1"]{--chip-bg:rgba(18,4,36,0.85);--chip-br:0.7rem;}
+    [data-lv="2"]{--chip-bg:rgba(4,20,18,0.85);--chip-br:0.3rem;}
+    [data-lv="3"]{--chip-bg:rgba(28,8,2,0.88); --chip-br:0.15rem;}
+    [data-lv="4"]{--chip-bg:rgba(24,20,2,0.88);--chip-br:0.5rem;}
+
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:100%; height:100%; overflow:hidden; background:#000;
+      font-family:'Inter',system-ui,sans-serif; color:#e8f4ff; }
+    canvas { display:block; position:fixed; inset:0; z-index:0; }
+
+    .vignette {
+      position:fixed; inset:0; z-index:1; pointer-events:none;
+      background:radial-gradient(ellipse at center,transparent 42%,rgba(0,0,6,0.78)100%);
+    }
+
+    /* ─── HUD wrapper ────────────────────────────────────────────────── */
+    .hud { position:fixed; inset:0; z-index:2; pointer-events:none; }
+
+    /* TOP chips — each absolutely positioned so they NEVER shift each other */
+    .hud-top { position:absolute; top:0; left:0; right:0; pointer-events:none; }
+
+    .glass-chip {
+      position:absolute; top:1.5rem;
+      background:var(--chip-bg);
+      border:1px solid var(--dim);
+      border-radius:var(--chip-br);
+      padding:.65rem 1.3rem;
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      transition:border-color .9s,background .9s,border-radius .9s,box-shadow .9s;
+    }
+    [data-lv="4"] .glass-chip {
+      box-shadow:0 0 20px rgba(255,215,0,0.14),inset 0 0 14px rgba(255,215,0,0.05);
+    }
+
+    /* Pin each chip independently */
+    .chip-left   { left:1.8rem; display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem .5rem .55rem; }
+    .chip-center { left:50%; transform:translateX(-50%); text-align:center; white-space:nowrap; }
+    .chip-right  { right:1.8rem; text-align:right; min-width:140px; }
+
+    .chip-label {
+      font-size:.58rem; letter-spacing:.28em; text-transform:uppercase;
+      color:rgba(255,255,255,0.34); margin-bottom:.16rem;
+    }
+    .chip-value {
+      font-size:.92rem; font-weight:700; color:var(--accent);
+      transition:color .9s;
+    }
+
+    /* Center chip */
+    .zone-sub {
+      font-size:.56rem; letter-spacing:.32em; text-transform:uppercase;
+      color:rgba(255,255,255,0.36); margin-bottom:.2rem; transition:color .9s;
+    }
+    .zone-main {
+      font-size:1.0rem; font-weight:800; color:#fff; letter-spacing:.06em;
+      font-family:'Orbitron',sans-serif;
+      text-shadow:0 0 24px var(--glow); transition:text-shadow .9s;
+    }
+
+    /* Points chip — fixed min-width + tabular nums prevents any layout shift */
+    .pts-val {
+      font-size:1.52rem; font-weight:800;
+      color:var(--accent);
+      font-variant-numeric:tabular-nums; line-height:1;
+      font-family:'Orbitron',sans-serif;
+      transition:color .9s; display:block;
+      text-align:right;
+    }
+
+    /* ─── Bottom HUD ─────────────────────────────────────────────────── */
+    .hud-bottom {
+      position:absolute; bottom:0; left:0; right:0;
+      padding:1.1rem 1.8rem 1.8rem;
+    }
+    .recap-line {
+      font-size:.82rem; color:rgba(255,255,255,0.48); text-align:center;
+      margin-bottom:.75rem; min-height:1.2em; letter-spacing:.02em;
+    }
+    .progress-wrap { max-width:680px; margin:0 auto; }
+    .level-pips {
+      display:flex; justify-content:center; gap:.55rem; margin-bottom:.55rem;
+    }
+    .pip {
+      width:7px; height:7px; border-radius:50%;
+      background:rgba(255,255,255,0.10);
+      border:1px solid rgba(255,255,255,0.08);
+      transition:background .5s,box-shadow .5s,transform .3s;
+    }
+    .pip.active { background:var(--accent); box-shadow:0 0 9px var(--glow); transform:scale(1.5); }
+    .progress-bar {
+      height:3px; background:rgba(255,255,255,0.07); border-radius:2px;
+      overflow:hidden; margin-bottom:.42rem;
+    }
+    [data-lv="3"] .progress-bar { height:4px; border-radius:0; }
+    [data-lv="4"] .progress-bar { height:5px; }
+    .progress-fill {
+      height:100%; width:0%;
+      background:var(--prog);
+      box-shadow:0 0 14px var(--glow); border-radius:2px;
+      transition:background .9s,box-shadow .9s; /* width animated by JS via inline style */
+    }
+    [data-lv="3"] .progress-fill { border-radius:0; }
+    .progress-labels {
+      display:flex; justify-content:space-between;
+      font-size:.63rem; color:rgba(255,255,255,0.22); font-variant-numeric:tabular-nums;
+    }
+
+    /* ─── Galaxy name (mid-left) ─────────────────────────────────────── */
+    .galaxy-name-wrap {
+      position:fixed; left:1.8rem; top:50%; transform:translateY(-50%);
+      z-index:3; pointer-events:none;
+    }
+    .galaxy-eyebrow {
+      font-size:.54rem; letter-spacing:.38em; text-transform:uppercase;
+      color:rgba(255,255,255,0.26); margin-bottom:.3rem;
+    }
+    .galaxy-title {
+      font-size:1.22rem; font-weight:700;
+      font-family:'Orbitron',sans-serif;
+      color:var(--accent); opacity:.9;
+      text-shadow:0 0 30px var(--glow);
+      transition:color .9s,text-shadow .9s; line-height:1.1;
+    }
+    .galaxy-level-tag {
+      font-size:.60rem; color:rgba(255,255,255,0.25);
+      margin-top:.28rem; letter-spacing:.12em;
+    }
+
+    /* ─── Leaderboard ────────────────────────────────────────────────── */
+    .leaderboard {
+      position:fixed; right:1.8rem; top:50%; transform:translateY(-50%);
+      z-index:5; pointer-events:none;
+      display:flex; flex-direction:column; gap:.35rem;
+    }
+    .lb-row {
+      display:flex; align-items:center; gap:.44rem;
+      background:rgba(4,8,28,0.62); border:1px solid rgba(255,255,255,0.07);
+      border-radius:2rem; padding:.36rem .78rem .36rem .46rem;
+      backdrop-filter:blur(10px); transition:border-color .9s,background .9s;
+    }
+    .lb-row.me {
+      border-color:var(--dim); background:rgba(0,8,26,0.84);
+      box-shadow:0 0 12px var(--glow);
+    }
+    .lb-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .lb-name { font-size:.70rem; color:rgba(255,255,255,0.55); min-width:2.2rem; }
+    .lb-row.me .lb-name { color:var(--accent); font-weight:700; transition:color .9s; }
+    .lb-pts {
+      font-size:.67rem; color:rgba(255,255,255,0.33);
+      font-variant-numeric:tabular-nums; margin-left:auto; padding-left:.5rem;
+      min-width:42px; text-align:right;
+    }
+    .lb-row.me .lb-pts { color:rgba(255,255,255,0.72); }
+
+    /* ─── Level-Up banner ────────────────────────────────────────────── */
+    .level-up {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      text-align:center; pointer-events:none; z-index:20;
+      opacity:0; transition:opacity .45s ease;
+    }
+    .level-up.show { opacity:1; }
+    .lu-eyebrow {
+      font-size:.62rem; letter-spacing:.48em; text-transform:uppercase;
+      color:rgba(255,255,255,0.42); margin-bottom:.5rem;
+    }
+    .lu-big {
+      font-size:4rem; font-weight:900; line-height:1;
+      font-family:'Orbitron',sans-serif;
+      background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+      filter:drop-shadow(0 0 50px var(--glow)); transition:background .9s;
+    }
+    .lu-sub { font-size:1rem; color:rgba(255,255,255,0.55); margin-top:.6rem; }
+
+    /* ─── Warp flash ─────────────────────────────────────────────────── */
+    .warp-flash {
+      position:fixed; inset:0; z-index:15; pointer-events:none;
+      background:radial-gradient(ellipse at center,#fff 0%,transparent 70%);
+      opacity:0; transition:opacity .12s ease;
+    }
+    .warp-flash.pop { opacity:0.38; }
+
+    /* ─── Back button — integrated into date chip ───────────────────── */
+    .back-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:1.6rem; height:1.6rem;
+      border-radius:50%; background:rgba(255,255,255,0.08);
+      color:rgba(255,255,255,0.55); text-decoration:none; font-size:.82rem;
+      border:1px solid rgba(255,255,255,0.10);
+      transition:background .2s,color .2s; flex-shrink:0;
+      pointer-events:all; cursor:pointer;
+    }
+    .back-icon:hover { background:rgba(255,255,255,0.16); color:var(--accent); }
+    .chip-left-inner { border-left:1px solid rgba(255,255,255,0.12); padding-left:.6rem; }
+
+    /* ─── Replay button (appears when animation ends) ────────────────── */
+    .replay-btn {
+      position:fixed; bottom:5rem; left:50%; transform:translateX(-50%);
+      z-index:30; pointer-events:all; cursor:pointer;
+      display:inline-flex; align-items:center; gap:.55rem;
+      background:rgba(0,8,24,0.88); border:1px solid var(--dim);
+      border-radius:3rem; padding:.78rem 2rem;
+      backdrop-filter:blur(20px); font-size:.85rem; font-family:inherit;
+      color:var(--accent); letter-spacing:.06em; text-transform:uppercase;
+      box-shadow:0 0 28px var(--glow);
+      opacity:0; pointer-events:none;
+      transition:opacity .6s ease, color .9s, border-color .9s, box-shadow .9s;
+    }
+    .replay-btn.show { opacity:1; pointer-events:all; }
+    .replay-btn:hover { background:rgba(0,14,36,0.92); }
+    .replay-icon { font-size:1.1rem; display:inline-block; }
+
+    /* ─── "Journey complete" overlay ─────────────────────────────────── */
+    .journey-badge {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      text-align:center; pointer-events:none; z-index:18;
+      opacity:0; transition:opacity 1.2s ease;
+    }
+    .journey-badge.show { opacity:1; }
+    .jb-eyebrow {
+      font-size:.60rem; letter-spacing:.50em; text-transform:uppercase;
+      color:rgba(255,255,255,0.38); margin-bottom:.6rem;
+    }
+    .jb-title {
+      font-size:2.8rem; font-weight:900;
+      font-family:'Orbitron',sans-serif;
+      background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+      filter:drop-shadow(0 0 60px var(--glow));
+    }
+    .jb-sub { font-size:.9rem; color:rgba(255,255,255,0.50); margin-top:.7rem; }
+  </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="vignette"></div>
+<div class="warp-flash" id="warp-flash"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <!-- Each chip ABSOLUTELY positioned — no flex, no layout shift, no flicker -->
+  <div class="hud-top">
+    <!-- Left: back nav + date — combined, no position conflict -->
+    <div class="glass-chip chip-left">
+      <a class="back-icon" href="#" title="Back to Missions"
+         onclick="history.length>1?history.back():(window.location='./../../');return false;">←</a>
+      <div class="chip-left-inner">
+        <div class="chip-label">Date</div>
+        <div class="chip-value" id="hud-date">—</div>
+      </div>
+    </div>
+    <!-- Center: level — absolutely centered, cannot be nudged by others -->
+    <div class="glass-chip chip-center">
+      <div class="zone-sub" id="hud-galaxy">Orion Nursery</div>
+      <div class="zone-main" id="hud-level">Scout</div>
+    </div>
+    <!-- Right: points — fixed min-width so number width change never shifts center -->
+    <div class="glass-chip chip-right">
+      <div class="chip-label">Points</div>
+      <div class="pts-val" id="hud-pts">0</div>
+    </div>
+  </div>
+
+  <div class="hud-bottom">
+    <p class="recap-line" id="hud-recap">Initiating cluster odyssey…</p>
+    <div class="progress-wrap">
+      <div class="level-pips" id="pips"></div>
+      <div class="progress-bar"><div class="progress-fill" id="hud-prog"></div></div>
+      <div class="progress-labels">
+        <span id="prog-start">—</span>
+        <span id="prog-end">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Galaxy name mid-left -->
+<div class="galaxy-name-wrap">
+  <div class="galaxy-eyebrow">Now crossing</div>
+  <div class="galaxy-title" id="gal-title">Orion Nursery</div>
+  <div class="galaxy-level-tag" id="gal-tag">Level I · Scout</div>
+</div>
+
+<!-- Leaderboard -->
+<div class="leaderboard" id="leaderboard"></div>
+
+<!-- Level-Up -->
+<div class="level-up" id="lvl-up">
+  <div class="lu-eyebrow">Level Reached</div>
+  <div class="lu-big" id="lu-big">Navigator</div>
+  <div class="lu-sub" id="lu-sub">Entering Aurora Stream</div>
+</div>
+
+<!-- Journey Complete badge -->
+<div class="journey-badge" id="journey-badge">
+  <div class="jb-eyebrow">Journey Complete</div>
+  <div class="jb-title" id="jb-title">Legend</div>
+  <div class="jb-sub" id="jb-sub">You have reached Stellar Crown</div>
+</div>
+
+<!-- Replay -->
+<button class="replay-btn" id="replay-btn" onclick="replayJourney()">
+  <span class="replay-icon">↺</span> Replay Journey
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+const DURATION_MS = 18000; // 18-second single-play recap
+
+const CONFIG = {
+  startDate: '2026-07-22',
+  endDate:   '2026-07-26',
+
+  levels: [
+    { name:'Scout',     roman:'I',   galaxy:'Orion Nursery', threshold:0,
+      accent:'#4aeeff', accent2:'#88ffff', glow:'rgba(74,238,255,0.30)',    dim:'rgba(74,238,255,0.22)',    prog:'linear-gradient(90deg,#4aeeff,#88ffff)' },
+    { name:'Navigator', roman:'II',  galaxy:'Aurora Stream', threshold:1800,
+      accent:'#d86eff', accent2:'#ff8dff', glow:'rgba(216,110,255,0.30)',   dim:'rgba(216,110,255,0.22)',   prog:'linear-gradient(90deg,#d86eff,#ff8dff)' },
+    { name:'Captain',   roman:'III', galaxy:'Emerald Veil',  threshold:3800,
+      accent:'#00e8a8', accent2:'#88ffd0', glow:'rgba(0,232,168,0.30)',     dim:'rgba(0,232,168,0.22)',     prog:'linear-gradient(90deg,#00e8a8,#88ffd0)' },
+    { name:'Commander', roman:'IV',  galaxy:'Crimson Tide',  threshold:5800,
+      accent:'#ff6633', accent2:'#ffaa44', glow:'rgba(255,102,51,0.30)',    dim:'rgba(255,102,51,0.22)',    prog:'linear-gradient(90deg,#ff6633,#ffaa44)' },
+    { name:'Legend',    roman:'V',   galaxy:'Stellar Crown', threshold:7800,
+      accent:'#ffd700', accent2:'#fff580', glow:'rgba(255,215,0,0.36)',     dim:'rgba(255,215,0,0.25)',     prog:'linear-gradient(90deg,#ffd700,#fff580)' },
+  ],
+
+  players: [
+    { name:'You',  isCurrentUser:true, color:'#4aeeff',
+      data:[{date:'2026-07-22',pts:450},{date:'2026-07-23',pts:2400},{date:'2026-07-24',pts:4600},{date:'2026-07-25',pts:6600},{date:'2026-07-26',pts:8800}] },
+    { name:'Lyra', color:'#ff88cc',
+      data:[{date:'2026-07-22',pts:380},{date:'2026-07-23',pts:2000},{date:'2026-07-24',pts:3900},{date:'2026-07-25',pts:5500},{date:'2026-07-26',pts:7200}] },
+    { name:'Rook', color:'#8dffb3',
+      data:[{date:'2026-07-22',pts:310},{date:'2026-07-23',pts:1500},{date:'2026-07-24',pts:3000},{date:'2026-07-25',pts:4400},{date:'2026-07-26',pts:5900}] },
+    { name:'Nia',  color:'#ffd69f',
+      data:[{date:'2026-07-22',pts:240},{date:'2026-07-23',pts:1100},{date:'2026-07-24',pts:2200},{date:'2026-07-25',pts:3400},{date:'2026-07-26',pts:4800}] },
+    { name:'Tavi', color:'#c6a8ff',
+      data:[{date:'2026-07-22',pts:180},{date:'2026-07-23',pts:750},{date:'2026-07-24',pts:1600},{date:'2026-07-25',pts:2600},{date:'2026-07-26',pts:3700}] },
+  ]
+};
+
+// ═══════════════════════════════════════════
+//  GALAXY VISUAL DEFINITIONS
+//  Sizes escalate: G1 small → G5 massive
+//  Positions spaced to feel like real deep space
+// ═══════════════════════════════════════════
+const GALAXY_DEFS = [
+  { // G1 – Orion Nursery (Scout) · small, close
+    // Young blue-white 2-arm spiral. Warm bulge, pink HII, blue OB arms.
+    n:60000, arms:2, radius:155, coreR:20, tight:0.048, thick:0.062,
+    hasBar:false, isEllip:false,
+    cx:'#ffe8b0', c1:'#c0deff', c2:'#3377ff', c3:'#1122aa', ch:'#ff2277', gc:'#ffeedd',
+    pos:[0,0,0], rot:[0.20,0,0.04],
+  },
+  { // G2 – Aurora Stream (Navigator) · medium
+    // Mature 3-arm violet-pink spiral. Lavender arms, magenta nebulae.
+    n:78000, arms:3, radius:210, coreR:26, tight:0.036, thick:0.066,
+    hasBar:false, isEllip:false,
+    cx:'#fff0e0', c1:'#e0aaff', c2:'#9933ee', c3:'#440077', ch:'#ff33cc', gc:'#ffe8ff',
+    pos:[-100,14,-620], rot:[0.22,0.82,-0.04],
+  },
+  { // G3 – Emerald Veil (Captain) · medium-large, barred
+    // Teal barred spiral. Gold bar, emerald arms, unusual ionized nebulae.
+    n:92000, arms:2, radius:258, coreR:32, barLen:95, tight:0.048, thick:0.054,
+    hasBar:true, isEllip:false,
+    cx:'#fff8c0', c1:'#44ffcc', c2:'#00bb88', c3:'#003322', ch:'#ffcc00', gc:'#ffffcc',
+    pos:[-55,-20,-1340], rot:[0.30,0.35,0.07],
+  },
+  { // G4 – Crimson Tide (Commander) · large elliptical
+    // Ancient warm stars. Orange-red K/M giants. No young blue stars.
+    n:112000, arms:0, radius:310, coreR:42, tight:0, thick:0.55,
+    hasBar:false, isEllip:true,
+    cx:'#ffece0', c1:'#ffaa66', c2:'#dd4411', c3:'#440008', ch:null, gc:'#ffddcc',
+    pos:[-200,24,-2280], rot:[0.18,0.54,0.03],
+  },
+  { // G5 – Stellar Crown (Legend) · MASSIVE 4-arm grand design — THE DESTINATION
+    // Most spectacular. White blazing core, golden arms, blue outer OB stars, cyan HII.
+    n:148000, arms:4, radius:435, coreR:50, tight:0.035, thick:0.046,
+    hasBar:false, isEllip:false,
+    cx:'#ffffff', c1:'#fff4cc', c2:'#ddaa00', c3:'#4433bb', ch:'#00ffee', gc:'#ffffee',
+    pos:[-70,8,-3640], rot:[0.24,0.12,-0.02],
+  },
+];
+
+// ═══════════════════════════════════════════
+//  PATH EASING
+//  First 4s → G1-G3 (quick flyby, "the past")
+//  Next 5s  → G4    (Commander approach)
+//  Final 9s → G5    (Legend arrival + orbit)
+// ═══════════════════════════════════════════
+// Galaxy path boundaries (control-point fractions, 20 pts = 19 segments):
+//   G1: 0 → 3/19 ≈ 0.158
+//   G2: 3/19 → 6/19 ≈ 0.316
+//   G3: 6/19 → 9/19 ≈ 0.474
+//   G4: 9/19 → 13/19 ≈ 0.684
+//   G5: 13/19 → 1.0
+const PATH_BREAKS = [
+  [0,      0    ],  // t_anim=0      → path=0
+  [0.222,  0.474],  // t_anim=0.222 (4s)  → G3 end (path 0.474)  — fast early
+  [0.500,  0.684],  // t_anim=0.500 (9s)  → G4 end (path 0.684)  — G4 in 5s
+  [1.000,  1.000],  // t_anim=1.0  (18s)  → end                   — G5 in 9s
+];
+
+function pathT(ta){
+  // Piecewise linear easing: animation-time → path-position
+  for(let i=0;i<PATH_BREAKS.length-1;i++){
+    const [t0,p0]=PATH_BREAKS[i], [t1,p1]=PATH_BREAKS[i+1];
+    if(ta<=t1){
+      return p0+(ta-t0)/(t1-t0)*(p1-p0);
+    }
+  }
+  return 1;
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+const startMs=Date.parse(CONFIG.startDate), endMs=Date.parse(CONFIG.endDate);
+const spanMs=endMs-startMs;
+const ME=CONFIG.players.find(p=>p.isCurrentUser);
+
+const clamp=(v,lo,hi)=>v<lo?lo:v>hi?hi:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+function interpPts(player,t){
+  const dayMs=startMs+clamp(t,0,1)*spanMs;
+  const d=player.data;
+  for(let i=0;i<d.length-1;i++){
+    const aMs=Date.parse(d[i].date),bMs=Date.parse(d[i+1].date);
+    if(dayMs>=aMs&&dayMs<=bMs){
+      const bl=(dayMs-aMs)/(bMs-aMs);
+      return Math.round(lerp(d[i].pts,d[i+1].pts,bl));
+    }
+  }
+  return t<0.5?d[0].pts:d[d.length-1].pts;
+}
+
+function resolveLevel(pts){
+  let lv=CONFIG.levels[0];
+  for(const l of CONFIG.levels) if(pts>=l.threshold) lv=l;
+  return lv;
+}
+
+function fmtDate(ms){
+  return new Date(ms).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+}
+
+// Which galaxy does path-position pt fall in?
+const GALAXY_PATH_BOUNDS=[0,3/19,6/19,9/19,13/19,1.0];
+function galaxyIndexForPath(pt){
+  for(let i=0;i<5;i++){
+    if(pt<GALAXY_PATH_BOUNDS[i+1]) return i;
+  }
+  return 4;
+}
+
+// ═══════════════════════════════════════════
+//  THREE.JS SETUP
+// ═══════════════════════════════════════════
+const canvas=document.getElementById('three-canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x000002,1);
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x000002,0.00035);
+const camera=new THREE.PerspectiveCamera(68,window.innerWidth/window.innerHeight,0.5,6000);
+
+// ═══════════════════════════════════════════
+//  TEXTURES
+// ═══════════════════════════════════════════
+function mkStarTex(sz=128){
+  const c=document.createElement('canvas'); c.width=c.height=sz;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz/2);
+  g.addColorStop(0,   'rgba(255,255,255,1.0)');
+  g.addColorStop(0.06,'rgba(255,255,255,0.95)');
+  g.addColorStop(0.22,'rgba(255,255,255,0.62)');
+  g.addColorStop(0.52,'rgba(255,255,255,0.18)');
+  g.addColorStop(1.0, 'rgba(255,255,255,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,sz,sz);
+  return new THREE.CanvasTexture(c);
+}
+function mkGlowTex(hex,sz=256){
+  const c=document.createElement('canvas'); c.width=c.height=sz;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz/2);
+  const {r,g:gr,b}=new THREE.Color(hex);
+  const ri=Math.round(r*255),gi=Math.round(gr*255),bi=Math.round(b*255);
+  g.addColorStop(0,   `rgba(${ri},${gi},${bi},1)`);
+  g.addColorStop(0.18,`rgba(${ri},${gi},${bi},0.68)`);
+  g.addColorStop(0.50,`rgba(${ri},${gi},${bi},0.20)`);
+  g.addColorStop(1.0, `rgba(${ri},${gi},${bi},0)`);
+  ctx.fillStyle=g; ctx.fillRect(0,0,sz,sz);
+  return new THREE.CanvasTexture(c);
+}
+
+const STAR_TEX=mkStarTex(128);
+
+// Per-particle size+color shader
+const GALAXY_MAT=new THREE.ShaderMaterial({
+  uniforms:{uTex:{value:STAR_TEX}},
+  vertexShader:`
+    attribute vec3 aColor; attribute float aSize; varying vec3 vColor;
+    void main(){
+      vColor=aColor;
+      vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_PointSize=clamp(aSize*(550.0/-mv.z),0.25,180.0);
+      gl_Position=projectionMatrix*mv;
+    }`,
+  fragmentShader:`
+    uniform sampler2D uTex; varying vec3 vColor;
+    void main(){
+      vec4 t=texture2D(uTex,gl_PointCoord);
+      if(t.a<0.003) discard;
+      gl_FragColor=vec4(vColor*t.rgb,t.a);
+    }`,
+  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+});
+
+// ═══════════════════════════════════════════
+//  BACKGROUND STARFIELD
+//  Realistic stellar color distribution (luminosity-weighted)
+// ═══════════════════════════════════════════
+(function buildBgStars(){
+  const n=20000;
+  const pos=new Float32Array(n*3),col=new Float32Array(n*3),siz=new Float32Array(n);
+  const SC=[[0.62,0.68,1.00],[0.80,0.88,1.00],[1,1,1],[1,.98,.88],[1,.88,.65],[1,.72,.44]];
+  const CW=[0.06,0.14,0.22,0.26,0.20,0.12]; let s=0;
+  const cum=CW.map(w=>(s+=w,s));
+  for(let i=0;i<n;i++){
+    const th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*2-1);
+    const rv=Math.random(),d=1300+rv*rv*2600;
+    pos[i*3]=d*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=d*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2]=d*Math.cos(ph);
+    const rnd=Math.random(); let ci=0;
+    for(let k=0;k<cum.length;k++){if(rnd<cum[k]){ci=k;break;}}
+    const [cr,cg,cb]=SC[ci],br=0.30+Math.random()*0.70;
+    // occasional bright star
+    const bigStar=Math.random()<0.03;
+    col[i*3]=cr*br; col[i*3+1]=cg*br; col[i*3+2]=cb*br;
+    siz[i]=(bigStar?3.5:0.22)+Math.random()*(bigStar?2.0:1.0);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('aColor',  new THREE.BufferAttribute(col,3));
+  geo.setAttribute('aSize',   new THREE.BufferAttribute(siz,1));
+  scene.add(new THREE.Points(geo,GALAXY_MAT.clone()));
+})();
+
+// ═══════════════════════════════════════════
+//  GALAXY BUILDER
+// ═══════════════════════════════════════════
+function hex2col(h){return new THREE.Color(h);}
+
+function buildGalaxy(def){
+  const{n,arms,radius,coreR,tight,thick,hasBar,barLen=0,isEllip,cx,c1,c2,c3,ch,gc}=def;
+  const CORE=hex2col(cx),INN=hex2col(c1),MID=hex2col(c2),OUT=hex2col(c3);
+  const HII=ch?hex2col(ch):null,GC=gc?hex2col(gc):null;
+
+  const pos=new Float32Array(n*3),col=new Float32Array(n*3),siz=new Float32Array(n);
+  let w=0;
+  function push(x,y,z,color,size){
+    if(w>=n)return; const i=w++;
+    pos[i*3]=x;pos[i*3+1]=y;pos[i*3+2]=z;
+    col[i*3]=Math.min(1,color.r);col[i*3+1]=Math.min(1,color.g);col[i*3+2]=Math.min(1,color.b);
+    siz[i]=size;
+  }
+
+  // Budget
+  const nCore=Math.floor(n*.13);
+  const nArm =Math.floor(n*.50);
+  const nDisk=Math.floor(n*.15);
+  const nDust=Math.floor(n*.07);
+  const nHII =ch?Math.floor(n*.055):0;
+  const nGC  =gc?Math.floor(n*.025):0;
+  const nHalo=n-nCore-nArm-nDisk-nDust-nHII-nGC;
+
+  // Core / Bulge
+  for(let i=0;i<nCore;i++){
+    const r=Math.pow(Math.random(),1.8)*coreR;
+    const th=Math.random()*Math.PI*2,ph=(Math.random()-.5)*Math.PI*.55;
+    const x=Math.cos(th)*Math.cos(ph)*r,y=Math.sin(ph)*r*.50,z=Math.sin(th)*Math.cos(ph)*r;
+    const t=r/coreR;
+    const c=CORE.clone().lerp(INN,t*.45);
+    c.multiplyScalar(clamp(1+Math.max(0,1-r/10)*10,1,14));
+    push(x,y,z,c,.65+Math.random()*2.8*(1-t*.7));
+  }
+
+  if(isEllip){
+    const ax=radius,ay=radius*.70,az=radius*.50;
+    const total=nArm+nDisk+nDust+nHalo;
+    for(let i=0;i<total;i++){
+      const r=radius*Math.pow(Math.random(),.50);
+      const th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*2-1);
+      const x=r*Math.sin(ph)*Math.cos(th),y=r*Math.sin(ph)*Math.sin(th)*(ay/ax),z=r*Math.cos(ph)*(az/ax);
+      const t=r/radius;
+      const bright=Math.exp(-6.0*(Math.pow(t+.01,.25)-1));
+      const c=INN.clone().lerp(OUT,Math.pow(t,.6)).multiplyScalar(Math.max(.04,bright));
+      push(x,y,z,c,.32+Math.random()*.80*(1-t*.5));
+    }
+  } else {
+    // Spiral arms
+    for(let i=0;i<nArm;i++){
+      const arm=i%arms;
+      const r=coreR*.6+Math.pow(Math.random(),.52)*(radius-coreR);
+      const base=(arm/arms)*Math.PI*2;
+      const angle=base+r*tight+(Math.random()-.5)*.60;
+      const spread=Math.PI*.065*(1+r/radius*1.2);
+      const da=(Math.random()-.5)*spread*2;
+      const finalAng=angle+da;
+      let x,y,z;
+      if(hasBar&&r<barLen){
+        const bFrac=r/barLen;
+        x=(Math.random()-.5)*barLen*1.9*bFrac;y=(Math.random()-.5)*4;z=(Math.random()-.5)*barLen*.16*bFrac;
+      } else {
+        const sr=(Math.random()-.5)*r*.08;
+        x=Math.cos(finalAng)*(r+sr);y=(Math.random()-.5)*Math.max(.8,r*thick);z=Math.sin(finalAng)*(r+sr);
+      }
+      const t=r/radius;
+      let c;
+      if(hasBar&&r<barLen){
+        c=CORE.clone().lerp(INN,.4+(Math.random()-.5)*.2);
+      } else if(t<.25){
+        c=INN.clone().lerp(CORE,((.25-t)/.25)*.3);
+      } else if(t<.60){
+        c=INN.clone().lerp(MID,(t-.25)/.35);
+      } else {
+        c=MID.clone().lerp(OUT,(t-.60)/.40);
+      }
+      const armCentral=1-Math.abs(da)/spread;
+      c.multiplyScalar(.68+armCentral*.85+Math.random()*.52);
+      push(x,y,z,c,.42+Math.random()*1.0*(1-t*.30));
+    }
+    // Disk
+    for(let i=0;i<nDisk;i++){
+      const r=Math.pow(Math.random(),.42)*radius,th=Math.random()*Math.PI*2;
+      const x=Math.cos(th)*r,z=Math.sin(th)*r,y=(Math.random()-.5)*Math.max(.5,r*thick*.55);
+      const t=r/radius;
+      push(x,y,z,INN.clone().lerp(OUT,t).multiplyScalar(.09+Math.random()*.20),.22+Math.random()*.50);
+    }
+    // Dust lanes
+    for(let i=0;i<nDust;i++){
+      const arm=(i+1)%arms;
+      const r=coreR*1.05+Math.random()*(radius*.82-coreR);
+      const base=((arm+.5)/arms)*Math.PI*2;
+      const angle=base+r*tight+(Math.random()-.5)*.28;
+      const da=(Math.random()-.5)*.20;
+      const x=Math.cos(angle+da)*r,y=(Math.random()-.5)*r*thick*.42,z=Math.sin(angle+da)*r;
+      const dg=.015+Math.random()*.022;
+      push(x,y,z,new THREE.Color(dg,dg*.65,dg*.45),.65+Math.random()*1.1);
+    }
+    // HII regions
+    if(HII){
+      for(let i=0;i<nHII;i++){
+        const arm=i%arms,r=radius*(.22+Math.random()*.70);
+        const base=(arm/arms)*Math.PI*2;
+        const angle=base+r*tight+(Math.random()-.5)*.13;
+        const x=Math.cos(angle)*r,y=(Math.random()-.5)*r*thick*.26,z=Math.sin(angle)*r;
+        push(x,y,z,HII.clone().multiplyScalar(2.8+Math.random()*2.5),.85+Math.random()*2.4);
+      }
+    }
+    // Globular clusters
+    if(GC){
+      for(let i=0;i<nGC;i++){
+        const r=radius*(.15+Math.random()*.75);
+        const th=Math.random()*Math.PI*2,ph=(Math.random()-.5)*Math.PI*(.5+Math.random()*.5);
+        const x=Math.cos(th)*Math.cos(ph)*r,y=Math.sin(ph)*r*.85,z=Math.sin(th)*Math.cos(ph)*r;
+        push(x,y,z,GC.clone().multiplyScalar(.55+Math.random()*.65),1.0+Math.random()*1.8);
+      }
+    }
+    // Halo
+    for(let i=0;i<nHalo;i++){
+      const r=radius*(.45+Math.random()*.85);
+      const th=Math.random()*Math.PI*2,ph=(Math.random()-.5)*Math.PI*.30;
+      const x=Math.cos(th)*Math.cos(ph)*r,y=Math.sin(ph)*r*.26,z=Math.sin(th)*Math.cos(ph)*r;
+      push(x,y,z,OUT.clone().multiplyScalar(.04+Math.random()*.11),.15+Math.random()*.35);
+    }
+  }
+
+  const geo=new THREE.BufferGeometry();
+  const wt=w; // written count
+  geo.setAttribute('position',new THREE.BufferAttribute(pos.slice(0,wt*3),3));
+  geo.setAttribute('aColor',  new THREE.BufferAttribute(col.slice(0,wt*3),3));
+  geo.setAttribute('aSize',   new THREE.BufferAttribute(siz.slice(0,wt),  1));
+
+  const grp=new THREE.Group();
+  grp.add(new THREE.Points(geo,GALAXY_MAT.clone()));
+
+  // Core glow sprite
+  const cSpr=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:mkGlowTex(cx,256),blending:THREE.AdditiveBlending,transparent:true,opacity:.68,depthWrite:false}));
+  cSpr.scale.set(coreR*5.8,coreR*5.8,1);
+  grp.add(cSpr);
+
+  // Wide disk halo sprite
+  const dSpr=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:mkGlowTex(c2,512),blending:THREE.AdditiveBlending,transparent:true,opacity:.17,depthWrite:false}));
+  dSpr.scale.set(radius*6.8,radius*(isEllip?3.6:1.3),1);
+  grp.add(dSpr);
+
+  // Nebula wisps
+  const wc=[c1,c2,c3,ch||c1];
+  for(let i=0;i<4;i++){
+    const wx=(Math.random()-.5)*radius*1.9,wy=(Math.random()-.5)*radius*.20,wz=(Math.random()-.5)*radius*1.9;
+    const ws=90+Math.random()*160;
+    const wSpr=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:mkGlowTex(wc[i],256),blending:THREE.AdditiveBlending,transparent:true,
+      opacity:.035+Math.random()*.08,depthWrite:false}));
+    wSpr.position.set(wx,wy,wz);
+    wSpr.scale.set(ws,ws,1);
+    grp.add(wSpr);
+  }
+  return grp;
+}
+
+// ═══════════════════════════════════════════
+//  BUILD GALAXIES
+// ═══════════════════════════════════════════
+const galaxyGroups=GALAXY_DEFS.map(def=>{
+  const grp=buildGalaxy(def);
+  grp.position.set(...def.pos);
+  grp.rotation.set(...def.rot);
+  scene.add(grp);
+  return grp;
+});
+
+// ═══════════════════════════════════════════
+//  CAMERA PATH
+//  20 control points.  Galaxy coverage by segment index:
+//    G1: 0-3  |  G2: 3-6  |  G3: 6-9  |  G4: 9-13  |  G5: 13-19
+//  With pathT easing: G1-G3 covered in 4s, G4 in 5s, G5 in 9s.
+// ═══════════════════════════════════════════
+const CAM_CURVE=new THREE.CatmullRomCurve3([
+  // ── G1: Orion Nursery [0,0,0] ──────────────────────────────────────
+  new THREE.Vector3( 110, 190, 900),   // 0  far approach, G1 glows ahead
+  new THREE.Vector3(  20, 100, 520),   // 1  closing in on G1
+  new THREE.Vector3(-130,  42, 160),   // 2  fly through G1 core
+  new THREE.Vector3(-225,  18, -85),   // 3  exiting G1 — G2 visible ahead
+
+  // ── G2: Aurora Stream [-100,14,-620] ───────────────────────────────
+  new THREE.Vector3(-248,   8,-375),   // 4  approach G2
+  new THREE.Vector3(-215,   4,-650),   // 5  near G2 core
+  new THREE.Vector3(-295, -15,-885),   // 6  exiting G2 — G3 emerging
+
+  // ── G3: Emerald Veil [-55,-20,-1340] ──────────────────────────────
+  new THREE.Vector3(-205, -26,-1120),  // 7  approaching G3
+  new THREE.Vector3( -72, -34,-1385),  // 8  through G3 barred core
+  new THREE.Vector3( -48, -20,-1620),  // 9  exiting G3 — Crimson Tide far ahead
+
+  // ── G4: Crimson Tide [-200,24,-2280] — linger ─────────────────────
+  new THREE.Vector3(-185,  10,-1900),  // 10 long approach begins — G4 glowing in distance
+  new THREE.Vector3(-275,  30,-2290),  // 11 near G4 center — warm red glow
+  new THREE.Vector3(-340,  16,-2530),  // 12 drifting past G4 — Stellar Crown emerging
+  new THREE.Vector3(-275,   5,-2750),  // 13 between G4-G5 — see G5 growing ahead ★
+
+  // ── G5: Stellar Crown [-70,8,-3640] — ARRIVAL, orbit, settle ──────
+  new THREE.Vector3(-188,  16,-3080),  // 14 approaching G5 outer disk
+  new THREE.Vector3( -85,  22,-3430),  // 15 entering G5 — scale becomes clear
+  new THREE.Vector3( -42,  10,-3700),  // 16 inside G5 — blazing core close
+  new THREE.Vector3(  85, -12,-3640),  // 17 sweeping right — panoramic arm view
+  new THREE.Vector3(  90,  38,-3530),  // 18 rising above — grand top-down perspective
+  new THREE.Vector3( -72,  18,-3580),  // 19 final settle — facing the glowing core ★
+]);
+
+const LOOK_TARGETS=GALAXY_DEFS.map(d=>new THREE.Vector3(...d.pos));
+
+// ═══════════════════════════════════════════
+//  DOM WIRING
+// ═══════════════════════════════════════════
+const hudDate  =document.getElementById('hud-date');
+const hudGalaxy=document.getElementById('hud-galaxy');
+const hudLevel =document.getElementById('hud-level');
+const hudPts   =document.getElementById('hud-pts');
+const hudProg  =document.getElementById('hud-prog');
+const hudRecap =document.getElementById('hud-recap');
+const galTitle =document.getElementById('gal-title');
+const galTag   =document.getElementById('gal-tag');
+const lbEl     =document.getElementById('leaderboard');
+const lvlUpEl  =document.getElementById('lvl-up');
+const luBig    =document.getElementById('lu-big');
+const luSub    =document.getElementById('lu-sub');
+const warpEl   =document.getElementById('warp-flash');
+const pipsEl   =document.getElementById('pips');
+const replayBtn=document.getElementById('replay-btn');
+const journeyBadge=document.getElementById('journey-badge');
+const jbTitle  =document.getElementById('jb-title');
+const jbSub    =document.getElementById('jb-sub');
+
+document.getElementById('prog-start').textContent=fmtDate(startMs);
+document.getElementById('prog-end').textContent  =fmtDate(endMs);
+
+// Pips
+CONFIG.levels.forEach((_,i)=>{
+  const pip=document.createElement('div');
+  pip.className='pip'; pip.id=`pip${i}`;
+  pipsEl.appendChild(pip);
+});
+
+// Leaderboard
+const lbRows=CONFIG.players.map(p=>{
+  const row=document.createElement('div');
+  row.className='lb-row'+(p.isCurrentUser?' me':'');
+  row.innerHTML=`<span class="lb-dot" style="background:${p.color}"></span>`+
+    `<span class="lb-name">${p.name}</span>`+
+    `<span class="lb-pts" id="lb${p.name}">—</span>`;
+  lbEl.appendChild(row);
+  return{player:p,ptsEl:document.getElementById(`lb${p.name}`)};
+});
+
+// ═══════════════════════════════════════════
+//  THEME SYSTEM
+// ═══════════════════════════════════════════
+const root=document.documentElement;
+let curA=new THREE.Color(CONFIG.levels[0].accent);
+let curA2=new THREE.Color(CONFIG.levels[0].accent2);
+let tgtA=curA.clone(),tgtA2=curA2.clone();
+let curLvIdx=0;
+
+function setTheme(lv,lvIdx){
+  tgtA.set(lv.accent); tgtA2.set(lv.accent2);
+  root.style.setProperty('--glow',lv.glow);
+  root.style.setProperty('--dim', lv.dim);
+  root.style.setProperty('--prog',lv.prog);
+  document.body.setAttribute('data-lv',String(lvIdx));
+  CONFIG.levels.forEach((_,i)=>{
+    document.getElementById(`pip${i}`)?.classList.toggle('active',i<=lvIdx);
+  });
+}
+function tickTheme(){
+  curA.lerp(tgtA,.024); curA2.lerp(tgtA2,.024);
+  root.style.setProperty('--accent', '#'+curA.getHexString());
+  root.style.setProperty('--accent2','#'+curA2.getHexString());
+}
+
+// ═══════════════════════════════════════════
+//  LEVEL-UP
+// ═══════════════════════════════════════════
+let prevLvlName=CONFIG.levels[0].name, prevThresh=0;
+let luTimer=null;
+
+function triggerLevelUp(lv,lvIdx){
+  luBig.textContent=lv.name;
+  luSub.textContent=`Entering ${lv.galaxy}`;
+  lvlUpEl.classList.add('show');
+  warpEl.classList.add('pop');
+  setTimeout(()=>warpEl.classList.remove('pop'),260);
+  if(luTimer)clearTimeout(luTimer);
+  luTimer=setTimeout(()=>lvlUpEl.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════
+//  CAMERA LOOK-AT
+// ═══════════════════════════════════════════
+const lookCur=new THREE.Vector3(0,0,0);
+const lookTgt=new THREE.Vector3(0,0,0);
+
+function getLookTarget(pt,camPos){
+  const gi=galaxyIndexForPath(pt);
+  // Blend between current and next galaxy based on segment progress
+  const lo=GALAXY_PATH_BOUNDS[gi], hi=GALAXY_PATH_BOUNDS[gi+1];
+  const segT=(pt-lo)/(hi-lo);
+  // Look mostly at current galaxy, blend toward next in final 30% of segment
+  const galPos=LOOK_TARGETS[gi];
+  if(gi<4&&segT>0.70){
+    const nextGal=LOOK_TARGETS[gi+1];
+    const bl=(segT-0.70)/0.30;
+    return galPos.clone().lerp(nextGal,bl*0.5);
+  }
+  return galPos;
+}
+
+// ═══════════════════════════════════════════
+//  CAMERA SHAKE (subtle)
+// ═══════════════════════════════════════════
+function shake(ts){
+  return new THREE.Vector3(
+    Math.sin(ts*.00036+1.2)*1.4,
+    Math.cos(ts*.00052+0.7)*.85,
+    Math.sin(ts*.00028+2.4)*.70
+  );
+}
+
+// ═══════════════════════════════════════════
+//  RECAP LINES  (rotate through)
+// ═══════════════════════════════════════════
+const RECAPS=[
+  (u,lv,pts,gal)=>`${u.name} · ${pts.toLocaleString()} pts · crossing the cluster`,
+  (u,lv,pts,gal)=>`${lv} rank — soaring through ${gal}`,
+  (u,lv,pts,gal)=>`${pts.toLocaleString()} cluster points earned · ${gal}`,
+  (u,lv,pts,gal)=>`${u.name} explores ${gal} as ${lv}`,
+  (u,lv,pts,gal)=>`Today: ${fmtDate(endMs)} · ${lv} · ${gal}`,
+];
+let lastRi=-1;
+
+// ═══════════════════════════════════════════
+//  ANIMATION STATE
+// ═══════════════════════════════════════════
+let animStart=null, animDone=false;
+
+function replayJourney(){
+  animStart=null; animDone=false;
+  prevLvlName=CONFIG.levels[0].name; prevThresh=0; curLvIdx=0;
+  lvlUpEl.classList.remove('show');
+  journeyBadge.classList.remove('show');
+  replayBtn.classList.remove('show');
+  if(luTimer){clearTimeout(luTimer);luTimer=null;}
+  setTheme(CONFIG.levels[0],0);
+  lastRi=-1;
+}
+
+// ═══════════════════════════════════════════
+//  MAIN ANIMATION LOOP
+// ═══════════════════════════════════════════
+function animate(ts){
+  requestAnimationFrame(animate);
+  if(!animStart) animStart=ts;
+
+  const elapsed=ts-animStart;
+  const tAnim=Math.min(1.0, elapsed/DURATION_MS);   // 0→1 linear animation time
+  const pt=pathT(tAnim);                             // 0→1 path position (eased)
+  const tData=tAnim;                                 // data uses linear time
+
+  // Camera position + shake
+  const base=CAM_CURVE.getPoint(pt);
+  camera.position.copy(base).add(shake(ts));
+
+  // Look-at (smooth)
+  lookTgt.copy(getLookTarget(pt,base));
+  lookCur.lerp(lookTgt,.028);
+  camera.lookAt(lookCur);
+
+  // Slow galaxy rotations
+  galaxyGroups.forEach((g,i)=>{g.rotation.y+=.000028*(1+i*.14);});
+
+  // ── Data ──────────────────────────────────────────────────────────
+  const pts   =interpPts(ME,tData);
+  const lv    =resolveLevel(pts);
+  const lvIdx =CONFIG.levels.indexOf(lv);
+  const dayMs =startMs+tData*spanMs;
+  const gi    =galaxyIndexForPath(pt);   // which galaxy camera is nearest
+
+  // Level change
+  if(lv.name!==prevLvlName&&lv.threshold>prevThresh){
+    prevLvlName=lv.name; prevThresh=lv.threshold; curLvIdx=lvIdx;
+    triggerLevelUp(lv,lvIdx);
+    setTheme(lv,lvIdx);
+  } else if(lvIdx!==curLvIdx){
+    curLvIdx=lvIdx; setTheme(lv,lvIdx);
+  }
+  tickTheme();
+
+  // ── HUD update ────────────────────────────────────────────────────
+  hudDate.textContent  =fmtDate(dayMs);
+  hudGalaxy.textContent=lv.galaxy;        // top center: player's earned galaxy
+  hudLevel.textContent =lv.name;          // top center: player's earned level
+  hudPts.textContent   =pts.toLocaleString();
+  hudProg.style.width  =(tAnim*100).toFixed(2)+'%';
+
+  // Left panel: what galaxy is camera physically crossing
+  galTitle.textContent=CONFIG.levels[gi].galaxy;
+  galTag.textContent  =`${CONFIG.levels[gi].roman} · ${CONFIG.levels[gi].name}`;
+
+  // Recap (updates continuously within section)
+  const ri=Math.min(RECAPS.length-1,Math.floor(tAnim*RECAPS.length));
+  if(ri!==lastRi) lastRi=ri;
+  hudRecap.textContent=RECAPS[lastRi](ME,lv.name,pts,lv.galaxy);
+
+  // Leaderboard
+  CONFIG.players
+    .map(p=>({p,pts:interpPts(p,tData)}))
+    .sort((a,b)=>b.pts-a.pts)
+    .forEach(item=>{
+      lbRows.find(r=>r.player===item.p)?.ptsEl &&
+        (lbRows.find(r=>r.player===item.p).ptsEl.textContent=item.pts.toLocaleString());
+    });
+
+  renderer.render(scene,camera);
+
+  // ── Animation complete ────────────────────────────────────────────
+  if(tAnim>=1.0&&!animDone){
+    animDone=true;
+    // Show journey-complete badge after a short pause
+    setTimeout(()=>{
+      const finalLv=CONFIG.levels[CONFIG.levels.length-1];
+      jbTitle.textContent=finalLv.name;
+      jbSub.textContent=`You have reached ${finalLv.galaxy}`;
+      journeyBadge.classList.add('show');
+    },800);
+    // Show replay button
+    setTimeout(()=>replayBtn.classList.add('show'), 1800);
+  }
+}
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// ── Init ─────────────────────────────────────────────────────────────
+document.body.setAttribute('data-lv','0');
+setTheme(CONFIG.levels[0],0);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
