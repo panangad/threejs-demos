@@ -7,1203 +7,1245 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    /* ─── CSS Variables (set by JS per level) ────────────────────────── */
+    /* ── RESET ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body {
+      width:100%; height:100%; overflow:hidden;
+      font-family:'Inter',system-ui,sans-serif;
+      background:#020810; color:#e8f4ff;
+    }
+
+    /* ── CSS VARIABLES (updated by JS per level) ──── */
     :root {
-      --accent:    #8deefc; /* Cyan */
-      --accent2:   #c6a8ff; /* Purple */
-      --dim:       rgba(141, 238, 252, 0.15);
-      --glow:      rgba(141, 238, 252, 0.25);
-      --chip-bg:   rgba(4, 10, 32, 0.85);
-      --chip-br:   0.5rem;
-      --prog:      linear-gradient(90deg, #8deefc, #c6a8ff);
-    }
-    
-    [data-lv="1"] { --chip-bg: rgba(4, 10, 32, 0.85); --chip-br: 0.5rem; }
-    [data-lv="2"] { --chip-bg: rgba(22, 6, 42, 0.85); --chip-br: 0.5rem; }
-    [data-lv="3"] { --chip-bg: rgba(6, 32, 20, 0.85); --chip-br: 0.5rem; }
-    [data-lv="4"] { --chip-bg: rgba(42, 28, 6, 0.85); --chip-br: 0.5rem; }
-    [data-lv="5"] { --chip-bg: rgba(46, 6, 12, 0.85); --chip-br: 0.5rem; }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #010208;
-      font-family: 'Inter', system-ui, sans-serif; color: #e8f4ff; }
-
-    /* ─── Layout & Background ────────────────────────────────────────── */
-    .game-viewport {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background: radial-gradient(circle at 50% 10%, #0c142c 0%, #02030a 80%);
-      overflow: hidden;
+      --accent:  #8deefc;
+      --accent2: #c6a8ff;
+      --glow:    rgba(141,238,252,.28);
+      --dim:     rgba(141,238,252,.15);
+      --prog:    linear-gradient(90deg,#8deefc,#c6a8ff);
     }
 
-    /* Parallax Starfield & Clouds */
-    .stars {
-      position: absolute;
-      inset: 0;
-      background-image: 
-        radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
-        radial-gradient(1.5px 1px at 150px 80px, #fff, rgba(0,0,0,0)),
-        radial-gradient(1px 1px at 300px 300px, #fff, rgba(0,0,0,0)),
-        radial-gradient(1.5px 1.5px at 50px 200px, rgba(255,255,255,0.9), rgba(0,0,0,0)),
-        radial-gradient(1px 1px at 450px 420px, #fff, rgba(0,0,0,0)),
-        radial-gradient(2px 2px at 600px 120px, rgba(255,255,255,0.8), rgba(0,0,0,0));
-      background-size: 550px 550px;
-      opacity: 0.4;
-      z-index: 0;
-    }
-    
-    .aurora-bg {
-      position: absolute;
-      top: -10%;
-      left: 10%;
-      width: 80%;
-      height: 60%;
-      background: radial-gradient(ellipse at center, rgba(141, 168, 255, 0.08) 0%, transparent 70%);
-      filter: blur(80px);
-      z-index: 0;
-      animation: auroraGlow 25s infinite alternate ease-in-out;
-    }
-    
-    @keyframes auroraGlow {
-      0% { opacity: 0.5; transform: translate(0, 0) scale(1); }
-      100% { opacity: 0.9; transform: translate(5%, 5%) scale(1.1); }
+    /* ── SCENE ────────────────────────────────────── */
+    .scene { position:fixed; inset:0; z-index:0; overflow:hidden; }
+
+    #sky {
+      position:absolute; inset:0;
+      background:radial-gradient(ellipse at 50% 0%,#0c2040 0%,#020810 60%);
+      transition:background 3s ease;
     }
 
-    /* 2D CSS Mountains & Cliffs */
-    .mountain-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
+    .aurora {
+      position:absolute; top:-5%; left:10%; width:80%; height:50%;
+      background:radial-gradient(ellipse at 45% 40%,
+        rgba(60,220,140,.06) 0%,rgba(100,140,255,.07) 40%,transparent 70%);
+      filter:blur(60px);
+      animation:auroraShift 28s infinite alternate ease-in-out;
+      pointer-events:none;
+    }
+    @keyframes auroraShift {
+      0%  { opacity:.6; transform:translate(0,0) scale(1); }
+      100%{ opacity:1;  transform:translate(4%,3%) scale(1.08); }
     }
 
-    .cloud-layer {
-      position: absolute;
-      width: 200%;
-      height: 200px;
-      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.03) 60%, transparent);
-      filter: blur(20px);
-      pointer-events: none;
-      z-index: 2;
-    }
-    .cloud-low  { bottom: 5%; left: -50%; animation: drift 140s infinite linear; }
-    .cloud-mid  { bottom: 35%; left: -20%; opacity: 0.7; animation: driftReverse 110s infinite linear; }
-    .cloud-high { bottom: 65%; left: -40%; opacity: 0.5; animation: drift 80s infinite linear; }
+    .mountain-svg { position:absolute; inset:0; width:100%; height:100%; }
 
-    @keyframes drift {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(50%); }
+    /* Clouds */
+    .cloud {
+      position:absolute; border-radius:50%;
+      background:rgba(255,255,255,.055); filter:blur(28px);
+      pointer-events:none; transition:opacity 2s;
     }
-    @keyframes driftReverse {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
+    .c1{width:420px;height:80px;top:13%;left:-5%; animation:cDrift 85s  linear infinite; }
+    .c2{width:310px;height:60px;top:20%;left:15%; animation:cDrift 115s linear infinite 15s reverse;opacity:.7;}
+    .c3{width:540px;height:95px;top:28%;left:55%; animation:cDrift 70s  linear infinite 5s; opacity:.55;}
+    .c4{width:360px;height:70px;top:50%;left:25%; animation:cDrift 95s  linear infinite 30s;opacity:.45;}
+    .c5{width:280px;height:55px;top:62%;left:68%; animation:cDrift 78s  linear infinite 10s reverse;opacity:.35;}
+    @keyframes cDrift { 0%{transform:translateX(0)} 100%{transform:translateX(130vw)} }
 
+    /* Snow / Weather */
+    #snow-wrap {
+      position:absolute; inset:0; overflow:hidden;
+      opacity:0; transition:opacity 2.5s; pointer-events:none;
+    }
+    #snow-wrap.active { opacity:1; }
+    .flake {
+      position:absolute; border-radius:50%;
+      background:rgba(255,255,255,.88);
+      animation:flakeFall linear infinite;
+    }
+    @keyframes flakeFall {
+      0%  { transform:translateY(-20px) translateX(0); }
+      100%{ transform:translateY(110vh) translateX(40px); }
+    }
+    #storm {
+      position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse at center,rgba(120,20,20,.2) 0%,transparent 70%);
+      opacity:0; transition:opacity 3s;
+    }
+    #storm.active { opacity:1; }
+
+    /* Vignette */
     .vignette {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;
-      background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,4,0.7) 100%);
+      position:fixed; inset:0; z-index:6; pointer-events:none;
+      background:radial-gradient(ellipse at center,transparent 38%,rgba(0,0,8,.65) 100%);
     }
 
-    /* ─── HUD Wrapper ────────────────────────────────────────────────── */
-    .hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
-    .hud-top { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; }
+    /* ── PLAYER ARENA ──────────────────────────────── */
+    #arena { position:fixed; inset:0; z-index:20; pointer-events:none; }
 
-    .glass-chip {
-      position: absolute; top: 1.5rem;
-      background: var(--chip-bg);
-      border: 1px solid var(--dim);
-      border-radius: var(--chip-br);
-      padding: .65rem 1.3rem;
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      transition: border-color .9s, background .9s, border-radius .9s, box-shadow .9s;
+    .av {
+      position:absolute; width:36px; height:36px; border-radius:50%;
+      border:2.5px solid transparent;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:800; font-family:'Orbitron',sans-serif;
+      transform:translate(-50%,-50%);
+      transition:left 1.4s cubic-bezier(.34,1.3,.64,1),top 1.4s cubic-bezier(.34,1.3,.64,1),opacity .5s;
+      will-change:left,top; z-index:20;
     }
-
-    .chip-left   { left: 1.8rem; display: flex; align-items: center; gap: .5rem; padding: .5rem .9rem .5rem .55rem; }
-    .chip-center { left: 50%; transform: translateX(-50%); text-align: center; white-space: nowrap; }
-    .chip-right  { right: 1.8rem; text-align: right; min-width: 140px; }
-
-    .chip-label {
-      font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
-      color: rgba(255,255,255,0.34); margin-bottom: .16rem;
-    }
-    .chip-value {
-      font-size: .92rem; font-weight: 700; color: var(--accent);
-      transition: color .9s;
+    .av.me { width:42px; height:42px; font-size:14px; z-index:21; }
+    .av-lbl {
+      position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
+      font-size:8.5px; font-weight:600; white-space:nowrap;
+      font-family:'Inter',sans-serif; color:#fff;
+      text-shadow:0 0 6px rgba(0,0,0,.9); pointer-events:none;
     }
 
-    /* Center chip */
-    .zone-sub {
-      font-size: .56rem; letter-spacing: .32em; text-transform: uppercase;
-      color: rgba(255,255,255,0.36); margin-bottom: .2rem; transition: color .9s;
-    }
-    .zone-main {
-      font-size: 1.0rem; font-weight: 800; color: #fff; letter-spacing: .06em;
-      font-family: 'Orbitron', sans-serif;
-      text-shadow: 0 0 24px var(--glow); transition: text-shadow .9s;
+    /* Winner pulse */
+    .av.winner { animation:winPulse 1.6s ease-in-out infinite; }
+    @keyframes winPulse {
+      0%,100%{ box-shadow:0 0 12px var(--pc),0 0 28px var(--pc); }
+      50%    { box-shadow:0 0 28px var(--pc),0 0 55px var(--pc); }
     }
 
-    /* Survivors Chip */
-    .survivor-count {
-      font-size: 1.4rem; font-weight: 800;
-      color: var(--accent);
-      font-variant-numeric: tabular-nums; line-height: 1;
-      font-family: 'Orbitron', sans-serif;
-      transition: color .9s; display: block;
-      text-align: right;
+    /* Cliff fall */
+    .av.falling {
+      animation:cliffFall 2.6s cubic-bezier(.25,.1,.25,1) forwards !important;
+      transition:none !important; z-index:19;
+    }
+    @keyframes cliffFall {
+      0%  { transform:translate(-50%,-50%) rotate(0deg)   scale(1);   opacity:1; }
+      12% { transform:translate(-28%,-82%) rotate(30deg)  scale(1.06);opacity:1; }
+      35% { transform:translate(12%,120%)  rotate(165deg) scale(.72); opacity:.9;}
+      65% { transform:translate(65%,380%)  rotate(335deg) scale(.38); opacity:.5;}
+      100%{ transform:translate(115%,700%) rotate(545deg) scale(0);   opacity:0; }
     }
 
-    /* ─── Bottom HUD ─────────────────────────────────────────────────── */
-    .hud-bottom {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 1.1rem 1.8rem 1.8rem;
+    /* ── HUD ───────────────────────────────────────── */
+    .hud { position:fixed; inset:0; z-index:30; pointer-events:none; }
+    .hud-top { position:absolute; top:0; left:0; right:0; }
+
+    .chip {
+      position:absolute; top:1.3rem;
+      background:rgba(4,10,32,.82); border:1px solid var(--dim);
+      border-radius:.65rem; padding:.6rem 1.2rem;
+      backdrop-filter:blur(18px);
+      transition:border-color .9s,background .9s;
     }
-    .recap-line {
-      font-size: .82rem; color: rgba(255,255,255,0.48); text-align: center;
-      margin-bottom: .75rem; min-height: 1.2em; letter-spacing: .02em;
+    .chip-L { left:1.6rem; display:flex; align-items:center; gap:.55rem; }
+    .chip-C { left:50%; transform:translateX(-50%); text-align:center; white-space:nowrap; }
+    .chip-R { right:1.6rem; text-align:right; }
+
+    .back-a {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:1.6rem; height:1.6rem; border-radius:50%;
+      background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.55); font-size:.82rem; text-decoration:none;
+      transition:background .2s,color .2s; flex-shrink:0; pointer-events:all; cursor:pointer;
     }
-    .progress-wrap { max-width: 680px; margin: 0 auto; pointer-events: all; }
-    .level-pips {
-      display: flex; justify-content: center; gap: .55rem; margin-bottom: .55rem;
+    .back-a:hover { background:rgba(255,255,255,.16); color:var(--accent); }
+    .chip-Li { border-left:1px solid rgba(255,255,255,.1); padding-left:.55rem; }
+
+    .lbl { font-size:.55rem; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.35); margin-bottom:.1rem; }
+    .val { font-size:.9rem; font-weight:700; color:var(--accent); transition:color .9s; }
+
+    .zone-sub  { font-size:.55rem; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.36); margin-bottom:.18rem; }
+    .zone-main { font-size:1rem; font-weight:800; font-family:'Orbitron',sans-serif; color:#fff; letter-spacing:.05em; text-shadow:0 0 22px var(--glow); transition:text-shadow .9s; }
+
+    .surv-count { font-size:1.45rem; font-weight:800; font-family:'Orbitron',sans-serif; color:#4cff91; line-height:1; }
+
+    /* HUD bottom */
+    .hud-bot {
+      position:absolute; bottom:0; left:0; right:0;
+      padding:.9rem 1.6rem 1.5rem;
+      background:linear-gradient(to top,rgba(2,6,18,.92) 0%,transparent 100%);
     }
+    .ticker {
+      font-size:.75rem; color:rgba(255,255,255,.55); text-align:center;
+      margin-bottom:.6rem; min-height:1.1em; letter-spacing:.03em;
+    }
+    .prog-section { max-width:700px; margin:0 auto; pointer-events:all; }
+    .pips { display:flex; justify-content:center; gap:.5rem; margin-bottom:.4rem; }
     .pip {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: background .5s, box-shadow .5s, transform .3s;
+      width:7px; height:7px; border-radius:50%;
+      background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.08);
+      transition:background .5s,transform .3s,box-shadow .3s;
     }
-    .pip.active { background: var(--accent); box-shadow: 0 0 9px var(--glow); transform: scale(1.5); }
-    
-    .progress-bar-container {
-      position: relative;
-      padding: 6px 0;
-      cursor: pointer;
+    .pip.on { background:var(--accent); transform:scale(1.5); box-shadow:0 0 8px var(--glow); }
+    .prog-wrap {
+      height:6px; background:rgba(255,255,255,.1); border-radius:3px;
+      overflow:hidden; cursor:ew-resize; position:relative;
     }
-    .progress-bar {
-      height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px;
-      overflow: hidden; margin-bottom: .42rem;
-      transition: background .3s;
+    .prog-fill {
+      height:100%; width:0%; background:var(--prog); border-radius:3px;
+      box-shadow:0 0 12px var(--glow); transition:background .9s,box-shadow .9s;
     }
-    .progress-bar-container:hover .progress-bar {
-      background: rgba(255,255,255,0.14);
-    }
-    .progress-fill {
-      height: 100%; width: 0%;
-      background: var(--prog);
-      box-shadow: 0 0 14px var(--glow); border-radius: 2px;
-      transition: background .9s, box-shadow .9s;
-    }
-    .progress-labels {
-      display: flex; justify-content: space-between;
-      font-size: .63rem; color: rgba(255,255,255,0.22); font-variant-numeric: tabular-nums;
+    .prog-dates {
+      display:flex; justify-content:space-between;
+      font-size:.6rem; color:rgba(255,255,255,.28); margin-top:.28rem;
     }
 
-    /* ─── Back Button & Replay Button ────────────────────────────────── */
-    .back-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 1.6rem; height: 1.6rem;
-      border-radius: 50%; background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.55); text-decoration: none; font-size: .82rem;
-      border: 1px solid rgba(255,255,255,0.10);
-      transition: background .2s, color .2s; flex-shrink: 0;
-      pointer-events: all; cursor: pointer;
+    /* ── CAMP INFO (left) ──────────────────────────── */
+    .camp-info {
+      position:fixed; left:1.6rem; top:50%; transform:translateY(-50%);
+      z-index:10; pointer-events:none;
     }
-    .back-icon:hover { background: rgba(255,255,255,0.16); color: var(--accent); }
-    .chip-left-inner { border-left: 1px solid rgba(255,255,255,0.12); padding-left: .6rem; }
+    .ci-emoji { font-size:2.2rem; display:block; margin-bottom:.35rem; }
+    .ci-eye   { font-size:.5rem; letter-spacing:.35em; text-transform:uppercase; color:rgba(255,255,255,.3); margin-bottom:.2rem; }
+    .ci-title { font-size:1.55rem; font-weight:700; font-family:'Orbitron',sans-serif; color:var(--accent); text-shadow:0 0 28px var(--glow); transition:color .9s,text-shadow .9s; line-height:1.1; }
+    .ci-alt   { font-size:.65rem; color:rgba(255,255,255,.35); margin-top:.3rem; letter-spacing:.1em; }
 
-    .replay-btn {
-      position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%);
-      z-index: 30; pointer-events: all; cursor: pointer;
-      display: inline-flex; align-items: center; gap: .55rem;
-      background: rgba(4, 10, 32, 0.88); border: 1px solid var(--dim);
-      border-radius: 3rem; padding: .78rem 2rem;
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      font-size: .85rem; font-family: inherit;
-      color: var(--accent); letter-spacing: .06em; text-transform: uppercase;
-      box-shadow: 0 0 28px var(--glow);
-      opacity: 0; pointer-events: none;
-      transition: opacity .6s ease, color .9s, border-color .9s, box-shadow .9s;
+    /* ── LEADERBOARD (right) ───────────────────────── */
+    .lb {
+      position:fixed; right:1.6rem; top:50%; transform:translateY(-50%);
+      z-index:15; pointer-events:none;
+      display:flex; flex-direction:column; gap:.3rem;
+      max-height:76vh; overflow-y:auto; scrollbar-width:none;
     }
-    .replay-btn.show { opacity: 1; pointer-events: all; }
-    .replay-btn:hover { background: rgba(4, 20, 52, 0.95); box-shadow: 0 0 38px var(--accent); }
-    .replay-icon { font-size: 1.1rem; display: inline-block; }
-
-    /* ─── Active Camp Details (Mid-Left) ──────────────────────────────── */
-    .camp-details-wrap {
-      position: fixed; left: 1.8rem; top: 50%; transform: translateY(-50%);
-      z-index: 10; pointer-events: none;
-    }
-    .camp-eyebrow {
-      font-size: .54rem; letter-spacing: .38em; text-transform: uppercase;
-      color: rgba(255,255,255,0.26); margin-bottom: .3rem;
-    }
-    .camp-title {
-      font-size: 1.62rem; font-weight: 700;
-      font-family: 'Orbitron', sans-serif;
-      color: var(--accent); opacity: .95;
-      text-shadow: 0 0 30px var(--glow);
-      transition: color .9s, text-shadow .9s; line-height: 1.1;
-    }
-    .camp-altitude {
-      font-size: .70rem; color: rgba(255,255,255,0.3);
-      margin-top: .35rem; letter-spacing: .12em;
-    }
-
-    /* ─── Leaderboard (Right Panel) ──────────────────────────────────── */
-    .leaderboard {
-      position: fixed; right: 1.8rem; top: 50%; transform: translateY(-50%);
-      z-index: 15; pointer-events: none;
-      display: flex; flex-direction: column; gap: .35rem;
-      max-height: 75vh;
-      overflow-y: auto;
+    .lb::-webkit-scrollbar { display:none; }
+    .lb-head {
+      font-size:.52rem; letter-spacing:.28em; text-transform:uppercase;
+      color:rgba(255,255,255,.3); text-align:center; padding-bottom:.35rem;
+      border-bottom:1px solid rgba(255,255,255,.06); margin-bottom:.1rem;
     }
     .lb-row {
-      display: flex; align-items: center; gap: .55rem;
-      background: rgba(4, 8, 28, 0.65); border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 2rem; padding: .38rem .88rem .38rem .46rem;
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      transition: all .5s ease;
-      width: 250px;
+      display:flex; align-items:center; gap:.5rem;
+      background:rgba(4,8,28,.68); border:1px solid rgba(255,255,255,.06);
+      border-radius:2rem; padding:.35rem .85rem .35rem .45rem;
+      backdrop-filter:blur(10px); transition:opacity .4s; min-width:240px;
     }
-    .lb-row.me {
-      border-color: var(--dim); background: rgba(0, 8, 26, 0.85);
-      box-shadow: 0 0 12px var(--glow);
+    .lb-row.me   { border-color:var(--dim); background:rgba(0,6,22,.88); box-shadow:0 0 10px var(--glow); }
+    .lb-row.elim { opacity:.3; border-color:transparent; background:rgba(10,2,2,.4); }
+    .lb-row.won  { border-color:rgba(255,215,0,.35); background:rgba(30,20,2,.85); box-shadow:0 0 14px rgba(255,215,0,.22); }
+    .lb-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .lb-name { font-size:.72rem; color:rgba(255,255,255,.65); min-width:3.2rem; font-weight:500; }
+    .lb-row.me  .lb-name { color:var(--accent); font-weight:700; }
+    .lb-row.won .lb-name { color:#ffd700; font-weight:700; }
+    .lb-st {
+      font-size:.5rem; letter-spacing:.06em; text-transform:uppercase;
+      padding:.1rem .3rem; border-radius:1rem; font-weight:600; margin-left:.15rem;
     }
-    .lb-row.eliminated {
-      opacity: 0.35;
-      border-color: transparent;
-      background: rgba(12, 2, 2, 0.4);
-    }
-    .lb-row.winner {
-      border-color: #ffd69f;
-      background: rgba(36, 24, 4, 0.8);
-      box-shadow: 0 0 15px rgba(255, 214, 159, 0.3);
-    }
-    .lb-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .lb-name { font-size: .72rem; color: rgba(255,255,255,0.65); min-width: 3.5rem; font-weight: 500; }
-    .lb-row.me .lb-name { color: var(--accent); font-weight: 700; }
-    .lb-row.winner .lb-name { color: #ffd69f; font-weight: 700; }
-    .lb-status {
-      font-size: .52rem; letter-spacing: .08em; text-transform: uppercase;
-      padding: .12rem .35rem; border-radius: 1rem; margin-left: .2rem;
-      font-weight: 600;
-    }
-    .status-climbing { background: rgba(141, 255, 179, 0.1); color: #8dffb3; }
-    .status-falling { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
-    .status-eliminated { background: rgba(255, 255, 255, 0.05); color: rgba(255,255,255,0.3); }
-    .status-winner { background: rgba(255, 214, 159, 0.15); color: #ffd69f; }
+    .st-c { background:rgba(141,255,179,.1);  color:#8dffb3; }
+    .st-f { background:rgba(255,107,107,.15); color:#ff6b6b; }
+    .st-g { background:rgba(255,255,255,.05); color:rgba(255,255,255,.28); }
+    .st-w { background:rgba(255,215,0,.15);   color:#ffd700; }
+    .lb-pts { font-size:.66rem; color:rgba(255,255,255,.38); min-width:44px; text-align:right; margin-left:auto; font-variant-numeric:tabular-nums; }
+    .lb-row.me  .lb-pts { color:rgba(255,255,255,.75); }
+    .lb-row.won .lb-pts { color:#ffd700; }
 
-    .lb-pts {
-      font-size: .67rem; color: rgba(255,255,255,0.4);
-      font-variant-numeric: tabular-nums; margin-left: auto;
-      min-width: 45px; text-align: right;
+    /* ── LEVEL-UP BANNER ───────────────────────────── */
+    .lu-banner {
+      position:fixed; top:50%; left:50%;
+      transform:translate(-50%,-50%) scale(.85);
+      text-align:center; pointer-events:none; z-index:40;
+      opacity:0; transition:opacity .4s,transform .4s;
     }
-    .lb-row.me .lb-pts { color: rgba(255,255,255,0.8); }
-
-    /* ─── Level-Up / Stage Banner ───────────────────────────────────── */
-    .level-up {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      text-align: center; pointer-events: none; z-index: 25;
-      opacity: 0; transition: opacity .45s ease;
-    }
-    .level-up.show { opacity: 1; }
-    .lu-eyebrow {
-      font-size: .62rem; letter-spacing: .48em; text-transform: uppercase;
-      color: rgba(255,255,255,0.42); margin-bottom: .5rem;
-    }
+    .lu-banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    .lu-eye { font-size:.6rem; letter-spacing:.45em; text-transform:uppercase; color:rgba(255,255,255,.42); margin-bottom:.4rem; }
     .lu-big {
-      font-size: 3.5rem; font-weight: 900; line-height: 1.1;
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      filter: drop-shadow(0 0 50px var(--glow)); transition: background .9s;
+      font-size:3.6rem; font-weight:900; font-family:'Orbitron',sans-serif; line-height:1;
+      background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      filter:drop-shadow(0 0 45px var(--glow)); transition:filter .9s;
     }
-    .lu-sub { font-size: 1rem; color: rgba(255,255,255,0.55); margin-top: .6rem; }
+    .lu-sub { font-size:.9rem; color:rgba(255,255,255,.5); margin-top:.5rem; }
 
-    /* ─── Flash ──────────────────────────────────────────────────────── */
-    .warp-flash {
-      position: fixed; inset: 0; z-index: 18; pointer-events: none;
-      background: radial-gradient(ellipse at center, #fff 0%, transparent 70%);
-      opacity: 0; transition: opacity .12s ease;
+    /* Warp flash */
+    #warp {
+      position:fixed; inset:0; z-index:38; pointer-events:none;
+      background:radial-gradient(ellipse at center,#fff 0%,transparent 70%); opacity:0;
     }
-    .warp-flash.pop { opacity: 0.3; }
+    #warp.pop { animation:warpPop .45s ease-out forwards; }
+    @keyframes warpPop { 0%{opacity:.35} 100%{opacity:0} }
 
-    /* ─── End Game Banner ────────────────────────────────────────────── */
-    .journey-badge {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      text-align: center; pointer-events: none; z-index: 22;
-      opacity: 0; transition: opacity 1.2s ease;
+    /* ── RECAP OVERLAY ──────────────────────────────── */
+    #recap {
+      position:fixed; inset:0; z-index:60;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(2,6,18,.87); backdrop-filter:blur(10px);
+      opacity:0; pointer-events:none; transition:opacity .5s;
     }
-    .journey-badge.show { opacity: 1; }
-    .jb-eyebrow {
-      font-size: .60rem; letter-spacing: .50em; text-transform: uppercase;
-      color: rgba(255,255,255,0.38); margin-bottom: .6rem;
-    }
-    .jb-title {
-      font-size: 2.8rem; font-weight: 900;
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(135deg, #ffd69f 0%, #ff8a65 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      filter: drop-shadow(0 0 60px rgba(255,214,159,0.4));
-    }
-    .jb-sub { font-size: .9rem; color: rgba(255,255,255,0.50); margin-top: .7rem; }
+    #recap.show { opacity:1; pointer-events:all; }
 
-    /* ─── Climb Arena ────────────────────────────────────────────────── */
-    .climb-container {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 5;
+    .rc-card {
+      background:rgba(6,14,40,.97); border:1px solid rgba(141,238,252,.18);
+      border-radius:1.1rem; padding:2rem 2.4rem;
+      max-width:500px; width:92%; text-align:center;
+      position:relative; overflow:hidden;
+    }
+    .rc-card::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(ellipse at top,rgba(141,238,252,.07) 0%,transparent 55%);
+      pointer-events:none;
     }
 
-    /* Camps / Waypoints on mountain */
-    .camp-marker {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      background: #010208;
-      border: 3px solid var(--accent);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 6;
-      box-shadow: 0 0 15px var(--accent);
-      transition: all .9s ease;
+    /* Tiny SVG cliff in recap header */
+    .rc-cliff { margin:0 auto .8rem; width:120px; height:44px; display:block; }
+
+    .rc-tag {
+      display:inline-block; font-size:.55rem; letter-spacing:.35em; text-transform:uppercase;
+      color:rgba(255,255,255,.4); background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1); border-radius:2rem;
+      padding:.2rem .7rem; margin-bottom:.6rem;
     }
-    .camp-marker::after {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border: 1px solid var(--accent);
-      border-radius: 50%;
-      opacity: 0.3;
-      animation: pulseMarker 2s infinite ease-out;
+    .rc-big { font-size:1.85rem; font-weight:900; font-family:'Orbitron',sans-serif; color:#fff; margin-bottom:.18rem; }
+    .rc-sub { font-size:.82rem; color:var(--accent); margin-bottom:1.4rem; letter-spacing:.04em; }
+
+    .rc-divider {
+      display:flex; align-items:center; gap:.6rem; margin-bottom:.65rem;
+      font-size:.56rem; letter-spacing:.28em; text-transform:uppercase; color:#ff6b6b;
     }
-    @keyframes pulseMarker {
-      0% { transform: scale(1); opacity: 0.6; }
-      100% { transform: scale(1.8); opacity: 0; }
+    .rc-divider::before,.rc-divider::after { content:''; flex:1; height:1px; background:rgba(255,107,107,.22); }
+
+    .rc-elim-list { list-style:none; margin-bottom:1rem; }
+    .rc-elim-item {
+      display:flex; align-items:center; gap:.55rem;
+      background:rgba(255,80,80,.07); border:1px solid rgba(255,80,80,.12);
+      border-radius:.4rem; padding:.32rem .65rem; margin-bottom:.3rem;
+      animation:slideIn .4s ease-out both;
+    }
+    @keyframes slideIn { from{transform:translateX(-16px);opacity:0} to{transform:translateX(0);opacity:1} }
+    .rc-skull { font-size:.95rem; }
+    .rc-edot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .rc-ename { flex:1; text-align:left; font-weight:600; font-size:.82rem; color:rgba(255,255,255,.68); }
+    .rc-epts  { font-size:.72rem; color:rgba(255,120,120,.7); font-family:'Orbitron',sans-serif; }
+
+    .rc-surv {
+      font-size:.8rem; color:#4cff91; padding:.45rem .8rem;
+      background:rgba(76,255,145,.07); border:1px solid rgba(76,255,145,.14);
+      border-radius:.45rem; margin-bottom:1.1rem;
+    }
+    .rc-timer { height:3px; background:rgba(255,255,255,.08); border-radius:2px; margin-bottom:.9rem; overflow:hidden; }
+    .rc-timer-fill {
+      height:100%; background:var(--accent); border-radius:2px;
+      animation:timerDrain linear forwards;
+    }
+    @keyframes timerDrain { from{width:100%} to{width:0%} }
+    .rc-btn {
+      background:var(--accent); color:#020810; border:none; border-radius:.5rem;
+      padding:.6rem 2rem; font-size:.82rem; font-weight:700; cursor:pointer;
+      letter-spacing:.05em; transition:transform .15s,box-shadow .15s;
+    }
+    .rc-btn:hover { transform:translateY(-2px); box-shadow:0 4px 18px var(--glow); }
+
+    /* ── CONFETTI ───────────────────────────────────── */
+    .confetti-wrap { position:fixed; inset:0; z-index:65; pointer-events:none; opacity:0; transition:opacity .8s; }
+    .confetti-wrap.show { opacity:1; }
+    .conf {
+      position:absolute; top:-10px; width:8px; height:14px; border-radius:2px;
+      animation:confFall linear infinite;
+    }
+    @keyframes confFall {
+      0%  { transform:translateY(0) rotate(0deg);   opacity:1; }
+      80% { opacity:1; }
+      100%{ transform:translateY(110vh) rotate(720deg); opacity:0; }
     }
 
-    .camp-marker-label {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-family: 'Orbitron', sans-serif;
-      font-size: .62rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.7);
-      white-space: nowrap;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-      pointer-events: none;
+    /* ── VICTORY SCREEN ─────────────────────────────── */
+    #victory {
+      position:fixed; inset:0; z-index:70;
+      display:flex; align-items:center; justify-content:center; flex-direction:column;
+      background:rgba(2,6,18,.93); backdrop-filter:blur(14px);
+      opacity:0; pointer-events:none; transition:opacity 1s;
     }
-    
-    .camp-marker-label.left-side {
-      left: auto;
-      right: 18px;
+    #victory.show { opacity:1; pointer-events:all; }
+    .vic-icon  { font-size:4.5rem; margin-bottom:.4rem; animation:vicBounce .7s ease-out; }
+    @keyframes vicBounce {
+      0%  { transform:scale(0) rotate(-15deg); }
+      60% { transform:scale(1.18) rotate(4deg); }
+      100%{ transform:scale(1) rotate(0); }
     }
+    .vic-eye   { font-size:.58rem; letter-spacing:.5em; text-transform:uppercase; color:rgba(255,215,0,.55); margin-bottom:.25rem; }
+    .vic-title { font-size:2.9rem; font-weight:900; font-family:'Orbitron',sans-serif; color:#ffd700; text-shadow:0 0 40px rgba(255,215,0,.5); margin-bottom:.2rem; line-height:1; }
+    .vic-sub   { font-size:.88rem; color:rgba(255,255,255,.45); margin-bottom:1.8rem; }
+    .vic-winners { display:flex; gap:1.2rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.8rem; }
+    .vic-card  {
+      text-align:center; padding:.9rem 1.4rem;
+      background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.22);
+      border-radius:.8rem; animation:vicCardIn .5s ease-out both;
+    }
+    @keyframes vicCardIn { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .vc-medal  { font-size:1.4rem; margin-bottom:.2rem; }
+    .vc-name   { font-size:1rem; font-weight:700; font-family:'Orbitron',sans-serif; color:#ffd700; }
+    .vc-pts    { font-size:.7rem; color:rgba(255,215,0,.55); margin-top:.1rem; }
 
-    /* Player Avatars climbing the mountain */
-    .player-avatar {
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(12, 18, 48, 0.95);
-      border: 2px solid #fff;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: .75rem;
-      font-weight: 800;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      transition: left .5s linear, top .5s linear, border-color .5s ease, box-shadow .5s ease, transform .5s ease, opacity .5s ease;
-      pointer-events: all;
+    /* ── REPLAY BUTTON ──────────────────────────────── */
+    #replay-btn {
+      position:fixed; bottom:4.5rem; left:50%;
+      transform:translateX(-50%) translateY(16px);
+      z-index:31; pointer-events:all; cursor:pointer;
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:rgba(4,10,32,.9); border:1px solid var(--dim);
+      border-radius:3rem; padding:.75rem 1.9rem; backdrop-filter:blur(18px);
+      font-size:.84rem; font-family:inherit; color:var(--accent);
+      letter-spacing:.06em; text-transform:uppercase;
+      box-shadow:0 0 24px var(--glow);
+      opacity:0; pointer-events:none;
+      transition:opacity .6s,transform .6s,color .9s,border-color .9s;
     }
-    .player-avatar:hover {
-      transform: translate(-50%, -50%) scale(1.2);
-      z-index: 12;
-    }
+    #replay-btn.show { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:all; }
+    #replay-btn:hover { background:rgba(4,18,50,.95); }
 
-    .player-name-tag {
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: .52rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.8);
-      background: rgba(0, 0, 0, 0.75);
-      padding: 1px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-      pointer-events: none;
-      letter-spacing: .05em;
-    }
-
-    /* Tragic Cliff Fall Animation */
-    .player-avatar.falling {
-      animation: cliffFall 2.2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
-      pointer-events: none;
-      z-index: 15;
-    }
-
-    @keyframes cliffFall {
-      0% {
-        transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
-        filter: brightness(1.2);
-      }
-      15% {
-        /* Initial stumble */
-        transform: translate(-50%, -100%) scale(1.1) rotate(15deg);
-      }
-      35% {
-        /* Plummet starts */
-        transform: translate(-40%, 150%) scale(0.9) rotate(-90deg);
-      }
-      70% {
-        /* Falling deep, spinning */
-        transform: translate(-10%, 600%) scale(0.5) rotate(-360deg);
-        opacity: 0.8;
-      }
-      100% {
-        /* Far down below */
-        transform: translate(30%, 1200%) scale(0) rotate(-720deg);
-        opacity: 0;
-      }
-    }
-    
-    .fall-trail {
-      position: absolute;
-      width: 2px;
-      height: 50px;
-      background: linear-gradient(to top, transparent, rgba(255, 255, 255, 0.4), transparent);
-      transform: translateX(-50%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .3s;
-    }
-    .player-avatar.falling .fall-trail {
-      opacity: 1;
-      bottom: 30px;
-      left: 50%;
-    }
-
-    /* Blizzard Particle Storm (for Level III) */
-    .blizzard-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 8;
-      background: transparent;
-      opacity: 0;
-      transition: opacity 1.5s ease;
-    }
-    .blizzard-overlay.active {
-      opacity: 0.4;
-    }
-    .snowflake {
-      position: absolute;
-      width: 3px;
-      height: 3px;
-      background: #fff;
-      border-radius: 50%;
-      opacity: 0.8;
-      animation: snowFall 4s infinite linear;
-    }
-    @keyframes snowFall {
-      0% { transform: translateY(-10px) translateX(0) rotate(0deg); }
-      50% { transform: translateY(50vh) translateX(-50px) rotate(180deg); }
-      100% { transform: translateY(105vh) translateX(-100px) rotate(360deg); }
-    }
+    /* Camp marker pulse ring */
+    .camp-pulse { animation:cpPulse 2.5s ease-out infinite; transform-origin:center; }
+    @keyframes cpPulse { 0%{opacity:.7;transform:scale(1)} 100%{opacity:0;transform:scale(2.2)} }
   </style>
 </head>
 <body>
 
-<div class="game-viewport">
-  <div class="stars"></div>
-  <div class="aurora-bg"></div>
-  
-  <!-- Cloud layers for altitude feeling -->
-  <div class="cloud-layer cloud-low"></div>
-  <div class="cloud-layer cloud-mid"></div>
-  <div class="cloud-layer cloud-high"></div>
+<!-- ════════════════════════════════════════════════
+     SCENE
+════════════════════════════════════════════════ -->
+<div class="scene">
+  <div id="sky"></div>
+  <div class="aurora"></div>
 
-  <!-- SVG lines for Mountain outline & path trail -->
-  <svg class="mountain-canvas" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- ── MOUNTAIN SVG ART ──────────────────── -->
+  <svg class="mountain-svg" viewBox="0 0 1920 1080"
+       preserveAspectRatio="xMidYMid slice"
+       xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <!-- Gradients -->
-      <linearGradient id="mountGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stop-color="#0f1938" />
-        <stop offset="100%" stop-color="#020309" />
+      <linearGradient id="mtnG" x1=".5" y1="0" x2=".5" y2="1">
+        <stop offset="0%"  stop-color="#141f35"/>
+        <stop offset="100%" stop-color="#06090f"/>
       </linearGradient>
-      <linearGradient id="mount2Grad" x1="100%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#1c113a" />
-        <stop offset="100%" stop-color="#03020b" />
+      <linearGradient id="snowG" x1=".5" y1="0" x2=".5" y2="1">
+        <stop offset="0%"  stop-color="#e2f0ff"/>
+        <stop offset="100%" stop-color="#aac8e8"/>
       </linearGradient>
-      <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="var(--accent)" />
-        <stop offset="100%" stop-color="var(--accent2)" />
+      <linearGradient id="farG" x1=".5" y1="0" x2=".5" y2="1">
+        <stop offset="0%"  stop-color="#16304a" stop-opacity=".55"/>
+        <stop offset="100%" stop-color="#0a1e30" stop-opacity=".75"/>
       </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="0.4" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
+      <radialGradient id="peakGlow" cx="50%" cy="15%" r="45%">
+        <stop offset="0%"  stop-color="rgba(141,238,252,.08)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+      </radialGradient>
+      <filter id="mtnBlur"><feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/></filter>
     </defs>
 
-    <!-- Parallax background mountain ranges -->
-    <polygon points="10,100 40,30 55,55 75,22 100,100" fill="#050a1b" opacity="0.35" />
-    <polygon points="0,100 25,45 45,65 65,30 90,100" fill="#090517" opacity="0.25" />
+    <!-- Stars injected by JS -->
+    <g id="stars-g" opacity=".8"></g>
 
-    <!-- Main styled mountain silhouette -->
-    <!-- Point coordinates:
-         Start: (15, 92) -> Camp 1: (30, 80) -> Camp 2: (65, 62) -> Camp 3: (35, 45) -> Camp 4: (70, 28) -> Summit: (50, 10)
-    -->
-    <polygon points="-10,100 15,92 30,80 34,81 65,62 55,60 35,45 42,43 70,28 60,25 50,10 40,25 10,65 -10,100" fill="url(#mountGrad)" />
-    <!-- Ridge highlights -->
-    <polyline points="15,92 30,80 65,62 35,45 70,28 50,10" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" />
-    
-    <!-- Snow capped peaks (Summit, Death zone, Blizzard pass) -->
-    <polygon points="50,10 47,15 44,14 41,17 38,15 40,25 50,10" fill="#ffffff" opacity="0.85" />
-    <polygon points="50,10 53,16 56,15 58,18 61,16 60,25 50,10" fill="#f0f6ff" opacity="0.8" />
-    
-    <polygon points="70,28 66,31 63,30 60,33 58,31 61,38 70,28" fill="#ffffff" opacity="0.5" />
-    <polygon points="35,45 32,48 30,47 28,50 26,48 29,55 35,45" fill="#f0f6ff" opacity="0.4" />
+    <!-- Peak atmosphere -->
+    <ellipse cx="960" cy="180" rx="820" ry="320" fill="url(#peakGlow)"/>
 
-    <!-- Glowing winding path line -->
-    <path id="rope-path" d="M 15,92 L 30,80 L 65,62 L 35,45 L 70,28 L 50,10" fill="none" stroke="rgba(141, 238, 252, 0.15)" stroke-width="0.5" stroke-dasharray="0.8 1" />
-    <path id="active-rope-path" d="M 15,92 L 30,80 L 65,62 L 35,45 L 70,28 L 50,10" fill="none" stroke="url(#glowGrad)" stroke-width="0.6" stroke-dasharray="2 1.5" opacity="0.6" filter="url(#glow)" />
+    <!-- Far mountain range (blurred, hazy) -->
+    <polygon filter="url(#mtnBlur)" fill="url(#farG)" points="
+      0,680  140,510 230,555 350,440 440,500 560,375 650,435 760,300 855,360
+      960,225 1065,360 1160,300 1270,435 1360,375 1480,500 1570,440 1690,555 1780,510
+      1920,680 1920,1080 0,1080"/>
+
+    <!-- Mid range -->
+    <polygon fill="#0b1520" opacity=".92" points="
+      0,760  90,660 190,705 310,575 400,625 510,505 605,555 710,425 810,480 870,395
+      960,275 1050,395 1110,480 1210,555 1305,505 1410,625 1500,575 1620,705 1730,660 1830,710
+      1920,750 1920,1080 0,1080"/>
+
+    <!-- Main mountain — jagged rocky silhouette -->
+    <polygon fill="url(#mtnG)" points="
+      0,1080 0,905
+      150,808 118,778 235,705 202,672 338,580 308,548 448,456 422,426
+      558,336 535,308 675,215 652,188 778,132 754,108 862,82 838,60 960,22
+      1082,60 1058,82 1166,108 1142,132 1268,188 1245,215 1385,308 1362,336
+      1498,426 1472,456 1612,548 1582,580 1718,672 1685,705 1802,778 1770,808
+      1920,905 1920,1080"/>
+
+    <!-- Right-face shadow -->
+    <polygon fill="#0a1220" opacity=".7" points="
+      960,22 1082,60 1166,108 1268,188 1385,308 1498,426 1612,548 1718,672
+      1802,778 1920,905 1920,1080 960,1080"/>
+
+    <!-- Rocky texture patches -->
+    <polygon fill="#0c1828" opacity=".85" points="535,308 652,188 675,215 558,336"/>
+    <polygon fill="#091522" opacity=".8"  points="308,548 422,426 448,456 338,580"/>
+    <polygon fill="#0c1828" opacity=".85" points="1362,336 1245,215 1268,188 1385,308"/>
+    <polygon fill="#091522" opacity=".8"  points="1582,580 1472,456 1498,426 1612,548"/>
+    <polygon fill="#071018" opacity=".9"  points="754,108 862,82 838,60 754,108"/>
+    <polygon fill="#071018" opacity=".9"  points="1166,108 1058,82 1082,60 1166,108"/>
+
+    <!-- Cliff ledge striations -->
+    <line x1="355" y1="545" x2="510" y2="535" stroke="#182840" stroke-width="3"   opacity=".65"/>
+    <line x1="218" y1="655" x2="360" y2="644" stroke="#182840" stroke-width="2.5" opacity=".5"/>
+    <line x1="620" y1="415" x2="740" y2="408" stroke="#182840" stroke-width="2"   opacity=".5"/>
+    <line x1="1180" y1="408" x2="1300" y2="415" stroke="#182840" stroke-width="2" opacity=".5"/>
+    <line x1="1560" y1="644" x2="1702" y2="655" stroke="#182840" stroke-width="2.5" opacity=".5"/>
+    <line x1="1410" y1="535" x2="1565" y2="545" stroke="#182840" stroke-width="3" opacity=".65"/>
+
+    <!-- Snow cap -->
+    <polygon fill="url(#snowG)" opacity=".96" points="
+      960,22
+      1058,82 1082,60 1166,108 1148,135 1235,182 1218,204 1270,242
+      1170,254 1110,298 1025,322 960,330
+      895,322 810,298 750,254 650,242 702,204 685,182 772,135 754,108
+      838,60 862,82"/>
+    <!-- Snow shadow line -->
+    <polyline fill="none" stroke="#c8e0f5" stroke-width="1.5" opacity=".28"
+              points="960,22 1065,230"/>
+    <polyline fill="none" stroke="#deeeff" stroke-width="1" opacity=".18"
+              points="960,22 855,230"/>
+
+    <!-- ── TRAIL PATH ─────────────────────────── -->
+    <!-- Start(269,950)→CampI(538,821)→CampII(960,648)→CampIII(730,475)→CampIV(1210,292)→Summit(960,90) -->
+    <polyline
+      points="269,950 538,821 960,648 730,475 1210,292 960,90"
+      fill="none" stroke="rgba(255,195,70,.62)"
+      stroke-width="3.5" stroke-dasharray="14,9" stroke-linecap="round"/>
+
+    <!-- Camp I — Base Camp -->
+    <g transform="translate(538,821)">
+      <circle class="camp-pulse" r="19" fill="none" stroke="rgba(141,238,252,.38)" stroke-width="1.5"/>
+      <circle r="10" fill="#060e28" stroke="rgba(141,238,252,.8)" stroke-width="2"/>
+      <text y="4" text-anchor="middle" dominant-baseline="middle"
+            fill="#8deefc" font-size="9" font-family="Orbitron,sans-serif" font-weight="700">I</text>
+      <text y="-24" text-anchor="middle" fill="rgba(255,255,255,.7)"
+            font-size="10" font-family="Inter,sans-serif" font-weight="600">Base Camp</text>
+    </g>
+
+    <!-- Camp II — Rocky Ridge -->
+    <g transform="translate(960,648)">
+      <circle class="camp-pulse" r="19" fill="none" stroke="rgba(198,168,255,.38)" stroke-width="1.5"/>
+      <circle r="10" fill="#060e28" stroke="rgba(198,168,255,.8)" stroke-width="2"/>
+      <text y="4" text-anchor="middle" dominant-baseline="middle"
+            fill="#c6a8ff" font-size="8" font-family="Orbitron,sans-serif" font-weight="700">II</text>
+      <text y="-24" text-anchor="middle" fill="rgba(255,255,255,.7)"
+            font-size="10" font-family="Inter,sans-serif" font-weight="600">Rocky Ridge</text>
+    </g>
+
+    <!-- Camp III — Blizzard Pass -->
+    <g transform="translate(730,475)">
+      <circle class="camp-pulse" r="19" fill="none" stroke="rgba(141,255,179,.38)" stroke-width="1.5"/>
+      <circle r="10" fill="#060e28" stroke="rgba(141,255,179,.8)" stroke-width="2"/>
+      <text y="4" text-anchor="middle" dominant-baseline="middle"
+            fill="#8dffb3" font-size="7" font-family="Orbitron,sans-serif" font-weight="700">III</text>
+      <text y="-24" text-anchor="middle" fill="rgba(255,255,255,.7)"
+            font-size="10" font-family="Inter,sans-serif" font-weight="600">Blizzard Pass</text>
+    </g>
+
+    <!-- Camp IV — Death Zone -->
+    <g transform="translate(1210,292)">
+      <circle class="camp-pulse" r="19" fill="none" stroke="rgba(255,214,159,.38)" stroke-width="1.5"/>
+      <circle r="10" fill="#060e28" stroke="rgba(255,214,159,.8)" stroke-width="2"/>
+      <text y="4" text-anchor="middle" dominant-baseline="middle"
+            fill="#ffd69f" font-size="7" font-family="Orbitron,sans-serif" font-weight="700">IV</text>
+      <text y="-24" text-anchor="middle" fill="rgba(255,255,255,.7)"
+            font-size="10" font-family="Inter,sans-serif" font-weight="600">Death Zone</text>
+    </g>
+
+    <!-- Summit -->
+    <g transform="translate(960,90)">
+      <circle class="camp-pulse" r="21" fill="none" stroke="rgba(255,215,0,.5)" stroke-width="1.5"/>
+      <circle r="12" fill="rgba(255,200,60,.2)" stroke="rgba(255,215,0,.88)" stroke-width="2"/>
+      <text y="4" text-anchor="middle" dominant-baseline="middle" fill="#ffd700" font-size="13">★</text>
+      <text y="-28" text-anchor="middle" fill="rgba(255,215,0,.8)"
+            font-size="10" font-family="Inter,sans-serif" font-weight="700">Summit</text>
+    </g>
+
+    <!-- Foreground boulders -->
+    <polygon fill="#040810" points="
+      0,1080 0,958 65,930 120,952 188,914 262,944 340,906 420,940 510,912 595,950
+      680,920 770,954 860,1080"/>
+    <polygon fill="#040810" points="
+      860,1080 860,954 960,920 1060,956 1150,922 1240,944 1335,908 1430,938 1520,910
+      1700,940 1800,920 1920,955 1920,1080"/>
   </svg>
 
-  <!-- Cliff fall overlay or particle container -->
-  <div class="blizzard-overlay" id="blizzard"></div>
+  <!-- Floating clouds -->
+  <div class="cloud c1"></div><div class="cloud c2"></div>
+  <div class="cloud c3"></div><div class="cloud c4"></div><div class="cloud c5"></div>
 
-  <div class="climb-container" id="arena">
-    <!-- Level Camps (Waypoints) on the mountain -->
-    <div class="camp-marker" id="camp0" style="left: 15%; top: 92%; --accent: #8deefc;"><span class="camp-marker-label">Start</span></div>
-    <div class="camp-marker" id="camp1" style="left: 30%; top: 80%; --accent: #8deefc;"><span class="camp-marker-label">Base Camp I</span></div>
-    <div class="camp-marker" id="camp2" style="left: 65%; top: 62%; --accent: #c6a8ff;"><span class="camp-marker-label left-side">Rocky Ridge II</span></div>
-    <div class="camp-marker" id="camp3" style="left: 35%; top: 45%; --accent: #8dffb3;"><span class="camp-marker-label">Blizzard Pass III</span></div>
-    <div class="camp-marker" id="camp4" style="left: 70%; top: 28%; --accent: #ffd69f;"><span class="camp-marker-label left-side">Death Zone IV</span></div>
-    <div class="camp-marker" id="camp5" style="left: 50%; top: 10%; --accent: #ff6b6b;"><span class="camp-marker-label">The Summit V</span></div>
-    
-    <!-- Player avatars will be dynamically injected here -->
-  </div>
+  <!-- Weather layers -->
+  <div id="snow-wrap"></div>
+  <div id="storm"></div>
 </div>
 
 <div class="vignette"></div>
-<div class="warp-flash" id="warp-flash"></div>
+<div id="warp"></div>
 
-<!-- HUD -->
+<!-- ════════════════════════════════════════════════
+     PLAYER ARENA
+════════════════════════════════════════════════ -->
+<div id="arena"></div>
+
+<!-- ════════════════════════════════════════════════
+     HUD
+════════════════════════════════════════════════ -->
 <div class="hud">
   <div class="hud-top">
-    <!-- Left: back nav + date -->
-    <div class="glass-chip chip-left">
-      <a class="back-icon" href="#" title="Back to Missions"
+    <!-- Left chip: back + date -->
+    <div class="chip chip-L">
+      <a class="back-a" href="#" title="Back to Missions"
          onclick="history.length>1?history.back():(window.location='./../../');return false;">←</a>
-      <div class="chip-left-inner">
-        <div class="chip-label">Timeline</div>
-        <div class="chip-value" id="hud-date">—</div>
+      <div class="chip-Li">
+        <div class="lbl">Timeline</div>
+        <div class="val" id="hud-date">—</div>
       </div>
     </div>
-    <!-- Center: level -->
-    <div class="glass-chip chip-center">
-      <div class="zone-sub" id="hud-camp">Base Camp</div>
-      <div class="zone-main" id="hud-level">Level I</div>
+    <!-- Center chip: level name -->
+    <div class="chip chip-C">
+      <div class="zone-sub" id="hud-zone">Base Camp</div>
+      <div class="zone-main" id="hud-level">LEVEL I</div>
     </div>
-    <!-- Right: survivors count -->
-    <div class="glass-chip chip-right">
-      <div class="chip-label">Survivors</div>
-      <div class="survivor-count" id="hud-survivors">10/10</div>
+    <!-- Right chip: survivors -->
+    <div class="chip chip-R">
+      <div class="lbl">Survivors</div>
+      <div class="surv-count" id="hud-surv">14 / 14</div>
     </div>
   </div>
-
-  <div class="hud-bottom">
-    <p class="recap-line" id="hud-recap">Assembling climbers at Base Camp...</p>
-    <div class="progress-wrap">
-      <div class="level-pips" id="pips"></div>
-      <div class="progress-bar-container" id="progress-container">
-        <div class="progress-bar"><div class="progress-fill" id="hud-prog"></div></div>
+  <div class="hud-bot">
+    <p class="ticker" id="ticker">Assembling climbers at Base Camp…</p>
+    <div class="prog-section">
+      <div class="pips" id="pips"></div>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-fill" id="prog-fill"></div>
       </div>
-      <div class="progress-labels">
-        <span id="prog-start">—</span>
-        <span id="prog-end">—</span>
+      <div class="prog-dates">
+        <span id="pd-start">—</span><span id="pd-end">—</span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Camp details mid-left -->
-<div class="camp-details-wrap">
-  <div class="camp-eyebrow">Current Altitude</div>
-  <div class="camp-title" id="camp-title">Base Camp</div>
-  <div class="camp-altitude" id="camp-alt">Level I · Elevation 1,200m</div>
+<!-- ════════════════════════════════════════════════
+     CAMP INFO (left)
+════════════════════════════════════════════════ -->
+<div class="camp-info">
+  <span class="ci-emoji" id="ci-emoji">⛺</span>
+  <div class="ci-eye">Current Altitude</div>
+  <div class="ci-title" id="ci-title">Base Camp</div>
+  <div class="ci-alt"   id="ci-alt">Level I · 1,200 m</div>
 </div>
 
-<!-- Leaderboard -->
-<div class="leaderboard" id="leaderboard"></div>
+<!-- ════════════════════════════════════════════════
+     LEADERBOARD (right)
+════════════════════════════════════════════════ -->
+<div class="lb" id="lb">
+  <div class="lb-head">⛰ Standings</div>
+</div>
 
-<!-- Level-Up / Stage Complete banner -->
-<div class="level-up" id="lvl-up">
-  <div class="lu-eyebrow">Level Conquered</div>
+<!-- ════════════════════════════════════════════════
+     LEVEL-UP BANNER
+════════════════════════════════════════════════ -->
+<div class="lu-banner" id="lu-banner">
+  <div class="lu-eye">Level Conquered</div>
   <div class="lu-big" id="lu-big">Rocky Ridge</div>
-  <div class="lu-sub" id="lu-sub">Entering Blizzard Pass</div>
+  <div class="lu-sub" id="lu-sub">Entering Blizzard Pass ↑</div>
 </div>
 
-<!-- Journey Complete badge -->
-<div class="journey-badge" id="journey-badge">
-  <div class="jb-eyebrow">Challenge Completed</div>
-  <div class="jb-title" id="jb-title">Summit Standing</div>
-  <div class="jb-sub" id="jb-sub">The ultimate survivors conquer Mount Eternity!</div>
+<!-- ════════════════════════════════════════════════
+     RECAP OVERLAY
+════════════════════════════════════════════════ -->
+<div id="recap">
+  <div class="rc-card">
+    <!-- Tiny cliff SVG art -->
+    <svg class="rc-cliff" viewBox="0 0 120 44" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rcSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stop-color="#0a1628"/>
+          <stop offset="100%" stop-color="#040a18"/>
+        </linearGradient>
+      </defs>
+      <rect width="120" height="44" fill="url(#rcSky)" rx="4"/>
+      <!-- Mountain silhouette -->
+      <polygon fill="#141f35" points="0,44 20,26 28,30 40,16 50,22 60,8 70,18 82,12 95,20 110,10 120,16 120,44"/>
+      <polygon fill="#1e2e48" opacity=".7" points="60,8 70,18 82,12 95,20 110,10 120,16 120,44 60,44"/>
+      <!-- Snow caps -->
+      <polygon fill="#deeeff" opacity=".85" points="60,8 66,16 63,17 60,14 57,17 54,16"/>
+      <polygon fill="#deeeff" opacity=".7"  points="110,10 115,16 112,17 110,14 108,17 105,16"/>
+      <!-- Trail line -->
+      <polyline fill="none" stroke="rgba(255,195,70,.6)" stroke-width="1" stroke-dasharray="4,3"
+                points="10,40 25,28 40,18 58,10"/>
+      <!-- Falling climber dot (animated) -->
+      <circle r="2.5" fill="#ff6b6b" opacity=".9">
+        <animateMotion dur="2s" repeatCount="indefinite"
+          path="M 85 14 Q 95 24 105 38"/>
+        <animate attributeName="opacity" values="1;1;0" dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+
+    <div class="rc-tag"  id="rc-tag">END OF LEVEL I</div>
+    <div class="rc-big"  id="rc-big">BASE CAMP</div>
+    <div class="rc-sub"  id="rc-sub">Rocky Ridge awaits…</div>
+
+    <div class="rc-divider">☠ <span id="rc-elim-hdr">4 Climbers Eliminated</span> ☠</div>
+    <ul class="rc-elim-list" id="rc-elim-list"></ul>
+
+    <div class="rc-surv" id="rc-surv">✓ 10 climbers continue</div>
+    <div class="rc-timer"><div class="rc-timer-fill" id="rc-timer-fill" style="animation-duration:6s"></div></div>
+    <button class="rc-btn" id="rc-btn">Continue Climbing ↑</button>
+  </div>
 </div>
 
-<!-- Replay -->
-<button class="replay-btn" id="replay-btn" onclick="replayClimb()">
-  <span class="replay-icon">↺</span> Replay Climb
-</button>
+<!-- ════════════════════════════════════════════════
+     CONFETTI
+════════════════════════════════════════════════ -->
+<div class="confetti-wrap" id="confetti"></div>
 
+<!-- ════════════════════════════════════════════════
+     VICTORY SCREEN
+════════════════════════════════════════════════ -->
+<div id="victory">
+  <div class="vic-icon">🏆</div>
+  <div class="vic-eye">Challenge Completed</div>
+  <div class="vic-title">Summit Reached!</div>
+  <div class="vic-sub">They conquered Mount Eternity</div>
+  <div class="vic-winners" id="vic-winners"></div>
+  <button onclick="replayClimb()"
+    style="background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.35);
+           border-radius:3rem;padding:.7rem 2rem;color:#ffd700;font-size:.85rem;
+           cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-family:inherit;">
+    ↺ Replay Climb
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     REPLAY BUTTON
+════════════════════════════════════════════════ -->
+<button id="replay-btn" onclick="replayClimb()">↺ Replay Climb</button>
+
+<!-- ════════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════ -->
 <script>
 'use strict';
 
-// ═══════════════════════════════════════════
-//  CONFIG & PLAYER DATA
-// ═══════════════════════════════════════════
-const DURATION_MS = 20000; // 20-second immersive vertical climb animation
+// ── CONFIG ────────────────────────────────────────────────
+const DURATION_MS = 24000;
 
 const CONFIG = {
   startDate: '2026-07-22',
   endDate:   '2026-07-26',
 
   levels: [
-    { name: 'Base Camp',     roman: 'I',   elevation: '1,200m', threshold: 0,
-      accent: '#8deefc', accent2: '#c6a8ff', glow: 'rgba(141,238,252,0.30)', dim: 'rgba(141,238,252,0.15)', prog: 'linear-gradient(90deg, #8deefc, #c6a8ff)' },
-    { name: 'Rocky Ridge',   roman: 'II',  elevation: '3,100m', threshold: 1800,
-      accent: '#c6a8ff', accent2: '#8dffb3', glow: 'rgba(198,168,255,0.30)', dim: 'rgba(198,168,255,0.15)', prog: 'linear-gradient(90deg, #c6a8ff, #8dffb3)' },
-    { name: 'Blizzard Pass', roman: 'III', elevation: '5,500m', threshold: 3800,
-      accent: '#8dffb3', accent2: '#ffd69f', glow: 'rgba(141,255,179,0.30)', dim: 'rgba(141,255,179,0.15)', prog: 'linear-gradient(90deg, #8dffb3, #ffd69f)' },
-    { name: 'Death Zone',    roman: 'IV',  elevation: '7,800m', threshold: 5800,
-      accent: '#ffd69f', accent2: '#ff6b6b', glow: 'rgba(255,214,159,0.30)', dim: 'rgba(255,214,159,0.15)', prog: 'linear-gradient(90deg, #ffd69f, #ff6b6b)' },
-    { name: 'The Summit',    roman: 'V',   elevation: '8,848m', threshold: 7800,
-      accent: '#ff6b6b', accent2: '#ff3366', glow: 'rgba(255,107,107,0.36)', dim: 'rgba(255,107,107,0.22)', prog: 'linear-gradient(90deg, #ff6b6b, #ff3366)' },
+    { name:'Base Camp',     roman:'I',   emoji:'⛺', alt:'1,200 m', threshold:0,
+      skyTop:'#030d1c', skyBot:'#0b2240',
+      accent:'#8deefc', accent2:'#c6a8ff', glow:'rgba(141,238,252,.30)',
+      prog:'linear-gradient(90deg,#8deefc,#c6a8ff)' },
+    { name:'Rocky Ridge',   roman:'II',  emoji:'🧗', alt:'3,100 m', threshold:2000,
+      skyTop:'#100a1c', skyBot:'#1c1040',
+      accent:'#c6a8ff', accent2:'#8dffb3', glow:'rgba(198,168,255,.30)',
+      prog:'linear-gradient(90deg,#c6a8ff,#8dffb3)' },
+    { name:'Blizzard Pass', roman:'III', emoji:'❄️', alt:'5,500 m', threshold:4000,
+      skyTop:'#060e1e', skyBot:'#0c2238',
+      accent:'#8dffb3', accent2:'#ffd69f', glow:'rgba(141,255,179,.30)',
+      prog:'linear-gradient(90deg,#8dffb3,#ffd69f)' },
+    { name:'Death Zone',    roman:'IV',  emoji:'💀', alt:'7,800 m', threshold:6000,
+      skyTop:'#160508', skyBot:'#320806',
+      accent:'#ffd69f', accent2:'#ff6b6b', glow:'rgba(255,214,159,.30)',
+      prog:'linear-gradient(90deg,#ffd69f,#ff6b6b)' },
+    { name:'The Summit',    roman:'V',   emoji:'🏔️', alt:'8,848 m', threshold:8000,
+      skyTop:'#0e0608', skyBot:'#1e1005',
+      accent:'#ff6b6b', accent2:'#ffd700', glow:'rgba(255,107,107,.36)',
+      prog:'linear-gradient(90deg,#ff6b6b,#ffd700)' },
   ],
 
-  // 10 players. Logic: last 30% of each level is eliminated at the boundaries.
-  // Level 1 boundary is 1800. At this boundary, Jax, Kira, Zane are eliminated.
-  // Level 2 boundary is 3800. Nova, Tavi eliminated.
-  // Level 3 boundary is 5800. Nia, Cole eliminated.
-  // Level 4 boundary is 7800. Lyra eliminated.
-  // Level 5 (Summit): You and Rook win!
+  // 14 players: 3 winners + 2 elim@L4 + 2 elim@L3 + 3 elim@L2 + 4 elim@L1
   players: [
-    { name: 'You',  isCurrentUser: true, color: '#8deefc', initial: 'Y',
-      data: [{date:'2026-07-22',pts:450},{date:'2026-07-23',pts:2400},{date:'2026-07-24',pts:4600},{date:'2026-07-25',pts:6600},{date:'2026-07-26',pts:8800}] },
-    { name: 'Rook', color: '#8dffb3', initial: 'R',
-      data: [{date:'2026-07-22',pts:520},{date:'2026-07-23',pts:2500},{date:'2026-07-24',pts:4700},{date:'2026-07-25',pts:6700},{date:'2026-07-26',pts:8900}] },
-    { name: 'Lyra', color: '#ff88cc', initial: 'L',
-      data: [{date:'2026-07-22',pts:420},{date:'2026-07-23',pts:2200},{date:'2026-07-24',pts:4400},{date:'2026-07-25',pts:6400},{date:'2026-07-26',pts:6400}] },
-    { name: 'Cole', color: '#98ff98', initial: 'C',
-      data: [{date:'2026-07-22',pts:380},{date:'2026-07-23',pts:2100},{date:'2026-07-24',pts:4100},{date:'2026-07-25',pts:4100},{date:'2026-07-26',pts:4100}] },
-    { name: 'Nia',  color: '#ffd69f', initial: 'N',
-      data: [{date:'2026-07-22',pts:390},{date:'2026-07-23',pts:2050},{date:'2026-07-24',pts:4000},{date:'2026-07-25',pts:4000},{date:'2026-07-26',pts:4000}] },
-    { name: 'Nova', color: '#ffff00', initial: 'V',
-      data: [{date:'2026-07-22',pts:350},{date:'2026-07-23',pts:1950},{date:'2026-07-24',pts:1950},{date:'2026-07-25',pts:1950},{date:'2026-07-26',pts:1950}] },
-    { name: 'Tavi', color: '#c6a8ff', initial: 'T',
-      data: [{date:'2026-07-22',pts:360},{date:'2026-07-23',pts:1900},{date:'2026-07-24',pts:1900},{date:'2026-07-25',pts:1900},{date:'2026-07-26',pts:1900}] },
-    { name: 'Jax',  color: '#ff6b6b', initial: 'J',
-      data: [{date:'2026-07-22',pts:290},{date:'2026-07-23',pts:290},{date:'2026-07-24',pts:290},{date:'2026-07-25',pts:290},{date:'2026-07-26',pts:290}] },
-    { name: 'Kira', color: '#20b2aa', initial: 'K',
-      data: [{date:'2026-07-22',pts:250},{date:'2026-07-23',pts:250},{date:'2026-07-24',pts:250},{date:'2026-07-25',pts:250},{date:'2026-07-26',pts:250}] },
-    { name: 'Zane', color: '#ffa500', initial: 'Z',
-      data: [{date:'2026-07-22',pts:220},{date:'2026-07-23',pts:220},{date:'2026-07-24',pts:220},{date:'2026-07-25',pts:220},{date:'2026-07-26',pts:220}] },
+    // ── SUMMIT WINNERS ──────────────────────────────────
+    { name:'You',  isCurrentUser:true, color:'#4ae5ff', initial:'Y',
+      data:[{date:'2026-07-22',pts:500},{date:'2026-07-23',pts:2300},
+            {date:'2026-07-24',pts:4500},{date:'2026-07-25',pts:6800},{date:'2026-07-26',pts:9200}] },
+    { name:'Rook', color:'#4cff91', initial:'R',
+      data:[{date:'2026-07-22',pts:520},{date:'2026-07-23',pts:2500},
+            {date:'2026-07-24',pts:4700},{date:'2026-07-25',pts:6900},{date:'2026-07-26',pts:9400}] },
+    { name:'Aria', color:'#ff88ff', initial:'A',
+      data:[{date:'2026-07-22',pts:480},{date:'2026-07-23',pts:2200},
+            {date:'2026-07-24',pts:4400},{date:'2026-07-25',pts:6700},{date:'2026-07-26',pts:9100}] },
+    // ── ELIMINATED LEVEL 4 (Death Zone) ─────────────────
+    { name:'Lyra', color:'#ff88cc', initial:'L',
+      data:[{date:'2026-07-22',pts:430},{date:'2026-07-23',pts:2100},
+            {date:'2026-07-24',pts:4300},{date:'2026-07-25',pts:6450},{date:'2026-07-26',pts:6450}] },
+    { name:'Mira', color:'#ff9955', initial:'M',
+      data:[{date:'2026-07-22',pts:415},{date:'2026-07-23',pts:2020},
+            {date:'2026-07-24',pts:4160},{date:'2026-07-25',pts:6150},{date:'2026-07-26',pts:6150}] },
+    // ── ELIMINATED LEVEL 3 (Blizzard Pass) ──────────────
+    { name:'Finn', color:'#66aaff', initial:'F',
+      data:[{date:'2026-07-22',pts:390},{date:'2026-07-23',pts:1910},
+            {date:'2026-07-24',pts:3920},{date:'2026-07-25',pts:3920},{date:'2026-07-26',pts:3920}] },
+    { name:'Nia',  color:'#ffd69f', initial:'N',
+      data:[{date:'2026-07-22',pts:375},{date:'2026-07-23',pts:1870},
+            {date:'2026-07-24',pts:3750},{date:'2026-07-25',pts:3750},{date:'2026-07-26',pts:3750}] },
+    // ── ELIMINATED LEVEL 2 (Rocky Ridge) ────────────────
+    { name:'Nova', color:'#ffee44', initial:'V',
+      data:[{date:'2026-07-22',pts:355},{date:'2026-07-23',pts:2080},
+            {date:'2026-07-24',pts:2080},{date:'2026-07-25',pts:2080},{date:'2026-07-26',pts:2080}] },
+    { name:'Tavi', color:'#c6a8ff', initial:'T',
+      data:[{date:'2026-07-22',pts:362},{date:'2026-07-23',pts:1960},
+            {date:'2026-07-24',pts:1960},{date:'2026-07-25',pts:1960},{date:'2026-07-26',pts:1960}] },
+    { name:'Sam',  color:'#ff7777', initial:'S',
+      data:[{date:'2026-07-22',pts:335},{date:'2026-07-23',pts:1820},
+            {date:'2026-07-24',pts:1820},{date:'2026-07-25',pts:1820},{date:'2026-07-26',pts:1820}] },
+    // ── ELIMINATED LEVEL 1 (Base Camp) ──────────────────
+    { name:'Jax',  color:'#ff5555', initial:'J',
+      data:[{date:'2026-07-22',pts:390},{date:'2026-07-23',pts:390},
+            {date:'2026-07-24',pts:390},{date:'2026-07-25',pts:390},{date:'2026-07-26',pts:390}] },
+    { name:'Kira', color:'#20c0aa', initial:'K',
+      data:[{date:'2026-07-22',pts:330},{date:'2026-07-23',pts:330},
+            {date:'2026-07-24',pts:330},{date:'2026-07-25',pts:330},{date:'2026-07-26',pts:330}] },
+    { name:'Zane', color:'#ffa500', initial:'Z',
+      data:[{date:'2026-07-22',pts:285},{date:'2026-07-23',pts:285},
+            {date:'2026-07-24',pts:285},{date:'2026-07-25',pts:285},{date:'2026-07-26',pts:285}] },
+    { name:'Rex',  color:'#cc44ff', initial:'X',
+      data:[{date:'2026-07-22',pts:245},{date:'2026-07-23',pts:245},
+            {date:'2026-07-24',pts:245},{date:'2026-07-25',pts:245},{date:'2026-07-26',pts:245}] },
   ]
 };
 
-// ═══════════════════════════════════════════
-//  MOUNTAIN PATH DEFINITIONS (Coordinates in %)
-// ═══════════════════════════════════════════
-const PATH_POINTS = [
-  { x: 15, y: 92 }, // Start
-  { x: 30, y: 80 }, // Camp 1
-  { x: 65, y: 62 }, // Camp 2
-  { x: 35, y: 45 }, // Camp 3
-  { x: 70, y: 28 }, // Camp 4
-  { x: 50, y: 10 }  // Summit
+// ── PATH COORDINATES (% of viewport, matching SVG points / 1920 & 1080) ──
+const PATH = [
+  { x:14.0, y:87.9 },  // Start
+  { x:28.0, y:76.0 },  // Camp I   – Base Camp
+  { x:50.0, y:60.0 },  // Camp II  – Rocky Ridge
+  { x:38.0, y:44.0 },  // Camp III – Blizzard Pass
+  { x:63.0, y:27.0 },  // Camp IV  – Death Zone
+  { x:50.0, y: 8.3 },  // Summit
 ];
 
-// Map player's points to (x, y) coordinates on mountain path
-function getPathCoords(pts) {
-  let seg = 0, ratio = 0;
-  if (pts <= 1800) {
-    seg = 0; ratio = pts / 1800;
-  } else if (pts <= 3800) {
-    seg = 1; ratio = (pts - 1800) / 2000;
-  } else if (pts <= 5800) {
-    seg = 2; ratio = (pts - 3800) / 2000;
-  } else if (pts <= 7800) {
-    seg = 3; ratio = (pts - 5800) / 2000;
-  } else {
-    seg = 4; ratio = Math.min(1.0, (pts - 7800) / 2200);
-  }
+// ── ELIMINATION SCHEDULE ──────────────────────────────────
+const ELIM = {
+  'Jax':0.20,'Kira':0.20,'Zane':0.20,'Rex':0.20,       // End of Level I
+  'Nova':0.42,'Tavi':0.42,'Sam':0.42,                    // End of Level II
+  'Finn':0.64,'Nia':0.64,                                // End of Level III
+  'Lyra':0.86,'Mira':0.86,                               // End of Level IV
+};
 
-  const p0 = PATH_POINTS[seg];
-  const p1 = PATH_POINTS[seg + 1];
-  
-  return {
-    x: p0.x + (p1.x - p0.x) * ratio,
-    y: p0.y + (p1.y - p0.y) * ratio
-  };
-}
+// ── RECAP DEFINITIONS ─────────────────────────────────────
+const RECAP_DEFS = [
+  { triggerT:0.22, level:1, levelName:'Base Camp',     nextName:'Rocky Ridge',
+    eliminated:['Jax','Kira','Zane','Rex'] },
+  { triggerT:0.44, level:2, levelName:'Rocky Ridge',   nextName:'Blizzard Pass',
+    eliminated:['Nova','Tavi','Sam'] },
+  { triggerT:0.66, level:3, levelName:'Blizzard Pass', nextName:'Death Zone',
+    eliminated:['Finn','Nia'] },
+  { triggerT:0.88, level:4, levelName:'Death Zone',    nextName:'The Summit',
+    eliminated:['Lyra','Mira'] },
+];
 
-// ═══════════════════════════════════════════
-//  TIMELINE & RECAP SETUP
-// ═══════════════════════════════════════════
+const TICKERS = [
+  'Climbers depart Base Camp. Clear skies — perfect conditions!',
+  'Rocky Ridge! Terrain turns technical. Boulders and exposure increase.',
+  'Blizzard slams Blizzard Pass! Visibility zero. Some climbers lost to the storm!',
+  'The Death Zone. Every step is agony. Oxygen starvation sets in.',
+  'Only the elite survive! Racing for the Summit of Mount Eternity!',
+];
+
+// ── HELPERS ───────────────────────────────────────────────
+const clamp  = (v,lo,hi) => v<lo?lo:v>hi?hi:v;
+const lerp   = (a,b,t)   => a+(b-a)*t;
 const startMs = Date.parse(CONFIG.startDate);
 const endMs   = Date.parse(CONFIG.endDate);
 const spanMs  = endMs - startMs;
-const ME      = CONFIG.players.find(p => p.isCurrentUser);
+const ME      = CONFIG.players.find(p=>p.isCurrentUser);
 
-// Pre-define when eliminations occur in normalized timeline (t: 0 -> 1)
-// These occur at level boundary crossings.
-const ELIMINATIONS = {
-  'Jax':  0.22, 'Kira': 0.22, 'Zane': 0.22, // End of Camp 1 (Base Camp)
-  'Nova': 0.47, 'Tavi': 0.47,               // End of Camp 2 (Rocky Ridge)
-  'Cole': 0.72, 'Nia':  0.72,               // End of Camp 3 (Blizzard Pass)
-  'Lyra': 0.90                              // End of Camp 4 (Death Zone)
-};
-
-const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
-const lerp  = (a, b, t) => a + (b - a) * t;
-
-function interpPts(player, t) {
-  // If the player is eliminated, and we are past their elimination time,
-  // freeze their points at their max points achieved prior to elimination
-  const elimT = ELIMINATIONS[player.name];
-  if (elimT && t >= elimT) {
-    // Return final points at their freeze point
-    return player.data[0].pts; // For these players, their points are the same across all days
-  }
-  
-  const dayMs = startMs + clamp(t, 0, 1) * spanMs;
-  const d = player.data;
-  
-  for (let i = 0; i < d.length - 1; i++) {
-    const aMs = Date.parse(d[i].date);
-    const bMs = Date.parse(d[i+1].date);
-    if (dayMs >= aMs && dayMs <= bMs) {
-      const bl = (dayMs - aMs) / (bMs - aMs);
-      return Math.round(lerp(d[i].pts, d[i+1].pts, bl));
-    }
-  }
-  return t < 0.5 ? d[0].pts : d[d.length - 1].pts;
+function fmtDate(ms){
+  return new Date(ms).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
 }
 
-function resolveLevel(pts) {
-  let lv = CONFIG.levels[0];
-  for (const l of CONFIG.levels) {
-    if (pts >= l.threshold) lv = l;
+function interpPts(player, t){
+  const elimT = ELIM[player.name];
+  if(elimT && t>=elimT) return player.data[player.data.length-1].pts;
+  const dayMs = startMs + clamp(t,0,1)*spanMs;
+  const d = player.data;
+  for(let i=0;i<d.length-1;i++){
+    const a=Date.parse(d[i].date), b=Date.parse(d[i+1].date);
+    if(dayMs>=a && dayMs<=b) return Math.round(lerp(d[i].pts,d[i+1].pts,(dayMs-a)/(b-a)));
   }
+  return t<0.5?d[0].pts:d[d.length-1].pts;
+}
+
+function resolveLevel(pts){
+  let lv=CONFIG.levels[0];
+  for(const l of CONFIG.levels) if(pts>=l.threshold) lv=l;
   return lv;
 }
 
-function fmtDate(ms) {
-  return new Date(ms).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+function getPathCoords(pts){
+  const thresholds=[0,2000,4000,6000,8000,9999];
+  let seg=4, ratio=1;
+  for(let i=0;i<5;i++){
+    if(pts>=thresholds[i] && pts<thresholds[i+1]){
+      seg=i; ratio=clamp((pts-thresholds[i])/(thresholds[i+1]-thresholds[i]),0,1); break;
+    }
+  }
+  const p0=PATH[seg], p1=PATH[seg+1]||PATH[5];
+  return { x:p0.x+(p1.x-p0.x)*ratio, y:p0.y+(p1.y-p0.y)*ratio };
 }
 
-// ═══════════════════════════════════════════
-//  DOM ELEMENTS & SETUP
-// ═══════════════════════════════════════════
-const arenaEl          = document.getElementById('arena');
-const hudDate          = document.getElementById('hud-date');
-const hudCamp          = document.getElementById('hud-camp');
-const hudLevel         = document.getElementById('hud-level');
-const hudSurvivors     = document.getElementById('hud-survivors');
-const hudProg          = document.getElementById('hud-prog');
-const hudRecap         = document.getElementById('hud-recap');
-const campTitle        = document.getElementById('camp-title');
-const campAlt          = document.getElementById('camp-alt');
-const lbEl             = document.getElementById('leaderboard');
-const lvlUpEl          = document.getElementById('lvl-up');
-const luBig            = document.getElementById('lu-big');
-const luSub            = document.getElementById('lu-sub');
-const warpEl           = document.getElementById('warp-flash');
-const pipsEl           = document.getElementById('pips');
-const replayBtn        = document.getElementById('replay-btn');
-const journeyBadge     = document.getElementById('journey-badge');
-const blizzardEl       = document.getElementById('blizzard');
-const progressContainer= document.getElementById('progress-container');
-
-document.getElementById('prog-start').textContent = fmtDate(startMs);
-document.getElementById('prog-end').textContent   = fmtDate(endMs);
-
-// Pips
-CONFIG.levels.forEach((_, i) => {
-  const pip = document.createElement('div');
-  pip.className = 'pip'; pip.id = `pip${i}`;
-  pipsEl.appendChild(pip);
-});
-
-// Setup Blizzard Snow particles
-for (let i = 0; i < 60; i++) {
-  const snow = document.createElement('div');
-  snow.className = 'snowflake';
-  snow.style.left = `${Math.random() * 100}%`;
-  snow.style.top = `-${Math.random() * 20}px`;
-  snow.style.animationDelay = `${Math.random() * 4}s`;
-  snow.style.opacity = `${0.3 + Math.random() * 0.7}`;
-  blizzardEl.appendChild(snow);
+// ── THEME ─────────────────────────────────────────────────
+const root = document.documentElement;
+function applyTheme(lv){
+  root.style.setProperty('--accent',  lv.accent);
+  root.style.setProperty('--accent2', lv.accent2);
+  root.style.setProperty('--glow',    lv.glow);
+  root.style.setProperty('--dim',     lv.glow.replace(/[\d.]+\)$/,'0.15)'));
+  root.style.setProperty('--prog',    lv.prog);
+  document.getElementById('sky').style.background =
+    `radial-gradient(ellipse at 50% 0%,${lv.skyBot} 0%,${lv.skyTop} 70%)`;
 }
 
-// Create Player Avatars on the mountain
-const avatars = CONFIG.players.map(p => {
-  const av = document.createElement('div');
-  av.className = 'player-avatar';
-  av.id = `av-${p.name}`;
-  av.style.borderColor = p.color;
-  av.style.boxShadow = `0 0 10px ${p.color}`;
-  av.innerHTML = `${p.initial}<div class="player-name-tag">${p.name}</div><div class="fall-trail"></div>`;
-  arenaEl.appendChild(av);
-  return { player: p, el: av, isFallen: false };
+// ── INJECT STARS ──────────────────────────────────────────
+(function(){
+  const g=document.getElementById('stars-g');
+  for(let i=0;i<160;i++){
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',Math.random()*1920);
+    c.setAttribute('cy',Math.random()*600);
+    c.setAttribute('r',.5+Math.random()*1.5);
+    c.setAttribute('fill','#fff');
+    c.setAttribute('opacity',.3+Math.random()*.7);
+    g.appendChild(c);
+  }
+})();
+
+// ── INJECT SNOWFLAKES ─────────────────────────────────────
+const snowWrap=document.getElementById('snow-wrap');
+for(let i=0;i<80;i++){
+  const f=document.createElement('div'); f.className='flake';
+  const sz=2+Math.random()*4;
+  f.style.cssText=`left:${Math.random()*100}%;top:${-(20+Math.random()*80)}px;
+    width:${sz}px;height:${sz}px;
+    animation-duration:${3+Math.random()*4}s;
+    animation-delay:${Math.random()*5}s;
+    opacity:${.35+Math.random()*.65};`;
+  snowWrap.appendChild(f);
+}
+
+// ── INJECT CONFETTI ───────────────────────────────────────
+const confettiEl=document.getElementById('confetti');
+const confColors=['#ffd700','#ff6b6b','#4ae5ff','#4cff91','#c6a8ff','#ff88ff','#ffa500'];
+for(let i=0;i<80;i++){
+  const c=document.createElement('div'); c.className='conf';
+  c.style.cssText=`
+    left:${Math.random()*100}%;
+    animation-duration:${2.5+Math.random()*3}s;
+    animation-delay:${Math.random()*2.5}s;
+    background:${confColors[i%confColors.length]};
+    opacity:${.6+Math.random()*.4};
+    transform:rotate(${Math.random()*180}deg);`;
+  confettiEl.appendChild(c);
+}
+
+// ── DOM REFS ──────────────────────────────────────────────
+const arenaEl   = document.getElementById('arena');
+const hudDate   = document.getElementById('hud-date');
+const hudZone   = document.getElementById('hud-zone');
+const hudLevel  = document.getElementById('hud-level');
+const hudSurv   = document.getElementById('hud-surv');
+const tickerEl  = document.getElementById('ticker');
+const progFill  = document.getElementById('prog-fill');
+const pipsEl    = document.getElementById('pips');
+const ciEmoji   = document.getElementById('ci-emoji');
+const ciTitle   = document.getElementById('ci-title');
+const ciAlt     = document.getElementById('ci-alt');
+const lbEl      = document.getElementById('lb');
+const luBanner  = document.getElementById('lu-banner');
+const luBig     = document.getElementById('lu-big');
+const luSub     = document.getElementById('lu-sub');
+const warpEl    = document.getElementById('warp');
+const recapEl   = document.getElementById('recap');
+const rcTag     = document.getElementById('rc-tag');
+const rcBig     = document.getElementById('rc-big');
+const rcSub     = document.getElementById('rc-sub');
+const rcElimHdr = document.getElementById('rc-elim-hdr');
+const rcElimList= document.getElementById('rc-elim-list');
+const rcSurv    = document.getElementById('rc-surv');
+const rcTimerFill=document.getElementById('rc-timer-fill');
+const rcBtn     = document.getElementById('rc-btn');
+const victoryEl = document.getElementById('victory');
+const vicWinners= document.getElementById('vic-winners');
+const replayBtn = document.getElementById('replay-btn');
+const stormEl   = document.getElementById('storm');
+const progWrap  = document.getElementById('prog-wrap');
+
+// Progress dates
+document.getElementById('pd-start').textContent = fmtDate(startMs);
+document.getElementById('pd-end').textContent   = fmtDate(endMs);
+
+// ── PIPS ──────────────────────────────────────────────────
+CONFIG.levels.forEach((_,i)=>{
+  const p=document.createElement('div'); p.className='pip'; p.id=`pip${i}`;
+  pipsEl.appendChild(p);
 });
 
-// Setup Leaderboard
-const lbRows = CONFIG.players.map(p => {
-  const row = document.createElement('div');
-  row.className = 'lb-row' + (p.isCurrentUser ? ' me' : '');
-  row.id = `lb-row-${p.name}`;
-  row.innerHTML = `
+// ── PLAYER AVATARS ────────────────────────────────────────
+const avatars=CONFIG.players.map(p=>{
+  const el=document.createElement('div');
+  el.className='av'+(p.isCurrentUser?' me':'');
+  el.id=`av-${p.name}`;
+  el.style.cssText=`
+    background:rgba(6,12,30,.9);
+    border-color:${p.color};
+    color:${p.color};
+    box-shadow:0 0 12px ${p.color}55,inset 0 0 8px ${p.color}22;
+    --pc:${p.color};`;
+  el.innerHTML=`${p.initial}<div class="av-lbl">${p.name}</div>`;
+  arenaEl.appendChild(el);
+  return { player:p, el, isFallen:false };
+});
+
+// ── LEADERBOARD ROWS ──────────────────────────────────────
+const lbRows=CONFIG.players.map(p=>{
+  const row=document.createElement('div');
+  row.className='lb-row'+(p.isCurrentUser?' me':'');
+  row.id=`lb-${p.name}`;
+  row.innerHTML=`
     <span class="lb-dot" style="background:${p.color}"></span>
     <span class="lb-name">${p.name}</span>
-    <span class="lb-status status-climbing" id="lb-status-${p.name}">Climbing</span>
-    <span class="lb-pts" id="lb-pts-${p.name}">—</span>
-  `;
+    <span class="lb-st st-c" id="st-${p.name}">Climbing</span>
+    <span class="lb-pts" id="pts-${p.name}">—</span>`;
   lbEl.appendChild(row);
-  return { 
-    player: p, 
-    rowEl: row, 
-    ptsEl: document.getElementById(`lb-pts-${p.name}`),
-    statusEl: document.getElementById(`lb-status-${p.name}`)
+  return {
+    player:p, rowEl:row,
+    stEl:document.getElementById(`st-${p.name}`),
+    ptsEl:document.getElementById(`pts-${p.name}`)
   };
 });
 
-// Minimal Color class mimicking THREE.js Color lerp for 2D transitions
-function THREEColor(hex) {
-  this.set(hex);
-}
-THREEColor.prototype = {
-  set(hex) {
-    const num = parseInt(hex.replace('#',''), 16);
-    this.r = (num >> 16 & 255) / 255;
-    this.g = (num >> 8 & 255) / 255;
-    this.b = (num & 255) / 255;
-  },
-  clone() {
-    const c = new THREEColor('#000000');
-    c.r = this.r; c.g = this.g; c.b = this.b;
-    return c;
-  },
-  lerp(target, alpha) {
-    this.r = this.r + (target.r - this.r) * alpha;
-    this.g = this.g + (target.g - this.g) * alpha;
-    this.b = this.b + (target.b - this.b) * alpha;
-    return this;
-  },
-  getHexString() {
-    const r = Math.round(this.r * 255).toString(16).padStart(2, '0');
-    const g = Math.round(this.g * 255).toString(16).padStart(2, '0');
-    const b = Math.round(this.b * 255).toString(16).padStart(2, '0');
-    return `${r}${g}${b}`;
-  }
-};
-
-// ═══════════════════════════════════════════
-//  THEME / ACCENT UPDATER
-// ═══════════════════════════════════════════
-const root = document.documentElement;
-let curA   = new THREEColor(CONFIG.levels[0].accent);
-let curA2  = new THREEColor(CONFIG.levels[0].accent2);
-let tgtA   = curA.clone();
-let tgtA2  = curA2.clone();
-let curLvIdx = 0;
-
-function setTheme(lv, lvIdx) {
-  tgtA.set(lv.accent);
-  tgtA2.set(lv.accent2);
-  root.style.setProperty('--glow', lv.glow);
-  root.style.setProperty('--dim', lv.dim);
-  root.style.setProperty('--prog', lv.prog);
-  document.body.setAttribute('data-lv', String(lvIdx + 1));
-  CONFIG.levels.forEach((_, i) => {
-    document.getElementById(`pip${i}`)?.classList.toggle('active', i <= lvIdx);
-  });
-  
-  // Blizzard snow particles overlay active during Level 3 Blizzard Pass
-  if (lvIdx === 2) {
-    blizzardEl.classList.add('active');
-  } else {
-    blizzardEl.classList.remove('active');
-  }
-}
-
-function tickTheme() {
-  curA.lerp(tgtA, 0.05);
-  curA2.lerp(tgtA2, 0.05);
-  root.style.setProperty('--accent', '#' + curA.getHexString());
-  root.style.setProperty('--accent2', '#' + curA2.getHexString());
-}
-
-// ═══════════════════════════════════════════
-//  LEVEL-UP BANNER
-// ═══════════════════════════════════════════
-let prevLvlName = CONFIG.levels[0].name;
-let prevThresh  = 0;
-let luTimer     = null;
-
-function triggerLevelUp(lv) {
-  luBig.textContent = lv.name;
-  luSub.textContent = `Entering altitude ${lv.elevation}`;
-  lvlUpEl.classList.add('show');
-  warpEl.classList.add('pop');
-  setTimeout(() => warpEl.classList.remove('pop'), 260);
-  if (luTimer) clearTimeout(luTimer);
-  luTimer = setTimeout(() => lvlUpEl.classList.remove('show'), 2200);
-}
-
-// ═══════════════════════════════════════════
-//  RECAP LINES
-// ═══════════════════════════════════════════
-const RECAPS = [
-  "Climbers are moving out from Base Camp! Heavy gear strapped, weather clear.",
-  "Approaching Rocky Ridge. The footing becomes unstable, wind picking up.",
-  "A brutal Blizzard hits at Blizzard Pass! 30% of our climbers have fallen off the cliff!",
-  "Entering the deadly Death Zone. Oxygen levels are critical, muscles screaming.",
-  "Only the strongest survive! Survivors make their final dash to the Summit of Mount Eternity!"
-];
-
-// ═══════════════════════════════════════════
-//  TIMELINE SCRUBBING
-// ═══════════════════════════════════════════
-let userTOverride = null;
-let isScrubbing = false;
-
-progressContainer.addEventListener('mousedown', (e) => {
-  isScrubbing = true;
-  scrub(e);
+// ── VICTORY CARDS ─────────────────────────────────────────
+const WINNERS=CONFIG.players.filter(p=>!ELIM[p.name]);
+const MEDALS=['🥇','🥈','🥉'];
+WINNERS.forEach((p,i)=>{
+  const c=document.createElement('div'); c.className='vic-card';
+  c.style.animationDelay=`${i*0.15}s`;
+  c.innerHTML=`
+    <div class="vc-medal">${MEDALS[i]||'🏅'}</div>
+    <div class="vc-name">${p.name}</div>
+    <div class="vc-pts" id="vc-pts-${p.name}">—</div>`;
+  vicWinners.appendChild(c);
 });
 
-window.addEventListener('mousemove', (e) => {
-  if (isScrubbing) scrub(e);
-});
-
-window.addEventListener('mouseup', () => {
-  isScrubbing = false;
-});
-
-function scrub(e) {
-  const rect = progressContainer.getBoundingClientRect();
-  const frac = clamp((e.clientX - rect.left) / rect.width, 0, 1);
-  userTOverride = frac;
-  // Reset any triggered falls so they re-trigger naturally if scrubbed backward/forward
-  animDone = false;
-  journeyBadge.classList.remove('show');
+// ── PROGRESS BAR SCRUBBING ────────────────────────────────
+let userTOverride=null, isScrubbing=false;
+progWrap.addEventListener('mousedown',e=>{ isScrubbing=true; scrub(e); });
+window.addEventListener('mousemove',  e=>{ if(isScrubbing) scrub(e); });
+window.addEventListener('mouseup',    ()=>{ isScrubbing=false; });
+function scrub(e){
+  const r=progWrap.getBoundingClientRect();
+  userTOverride=clamp((e.clientX-r.left)/r.width,0,1);
+  animDone=false;
+  victoryEl.classList.remove('show');
   replayBtn.classList.remove('show');
-  
-  avatars.forEach(av => {
-    const elimT = ELIMINATIONS[av.player.name];
-    if (!elimT || userTOverride < elimT) {
-      av.el.classList.remove('falling');
-      av.isFallen = false;
-    }
+  confettiEl.classList.remove('show');
+  avatars.forEach(av=>{
+    const et=ELIM[av.player.name];
+    if(!et||userTOverride<et){ av.el.classList.remove('falling'); av.isFallen=false; av.el.style.opacity='1'; }
   });
+  hideRecap();
 }
 
-// ═══════════════════════════════════════════
-//  ANIMATION & MAIN LOOP
-// ═══════════════════════════════════════════
-let animStart = null;
-let animDone  = false;
+// ── LEVEL-UP BANNER ───────────────────────────────────────
+let luTimer=null;
+function triggerLevelUp(lv, nextLv){
+  luBig.textContent=lv.name;
+  luSub.textContent=`↑ Entering ${nextLv.name}`;
+  luBanner.classList.add('show');
+  warpEl.className=''; void warpEl.offsetWidth; warpEl.className='pop';
+  if(luTimer) clearTimeout(luTimer);
+  luTimer=setTimeout(()=>luBanner.classList.remove('show'),2400);
+}
 
-function replayClimb() {
-  animStart = null;
-  animDone = false;
-  userTOverride = null;
-  prevLvlName = CONFIG.levels[0].name;
-  prevThresh = 0;
-  curLvIdx = 0;
-  lvlUpEl.classList.remove('show');
-  journeyBadge.classList.remove('show');
+// ── RECAP SYSTEM ──────────────────────────────────────────
+const recapShown={};
+let recapPaused=false, pausedAtT=null, rcTimer=null;
+
+function showRecap(def, t){
+  recapPaused=true; pausedAtT=t;
+
+  // Count already-eliminated survivors
+  const alreadyElim=Object.entries(ELIM).filter(([,et])=>et<=def.triggerT).map(([n])=>n);
+  const survivorCount=CONFIG.players.length-alreadyElim.length;
+
+  rcTag.textContent=`END OF LEVEL ${['I','II','III','IV'][def.level-1]}`;
+  rcBig.textContent=def.levelName.toUpperCase();
+  rcSub.textContent=`${def.nextName} awaits…`;
+  rcElimHdr.textContent=`${def.eliminated.length} Climber${def.eliminated.length>1?'s':''} Eliminated`;
+  rcSurv.textContent=`✓ ${survivorCount} climber${survivorCount>1?'s':''} continue to ${def.nextName}`;
+
+  // Build elim list
+  rcElimList.innerHTML='';
+  def.eliminated.forEach((name,i)=>{
+    const p=CONFIG.players.find(x=>x.name===name);
+    const pts=p?interpPts(p,t):0;
+    const li=document.createElement('li'); li.className='rc-elim-item';
+    li.style.animationDelay=`${i*0.12}s`;
+    li.innerHTML=`
+      <span class="rc-skull">☠️</span>
+      <span class="rc-edot" style="background:${p?p.color:'#ff6b6b'}"></span>
+      <span class="rc-ename">${name}</span>
+      <span class="rc-epts">${pts.toLocaleString()} pts</span>`;
+    rcElimList.appendChild(li);
+  });
+
+  // Reset countdown bar
+  rcTimerFill.style.animation='none';
+  void rcTimerFill.offsetWidth;
+  rcTimerFill.style.animation='timerDrain 6s linear forwards';
+
+  recapEl.classList.add('show');
+  if(rcTimer) clearTimeout(rcTimer);
+  rcTimer=setTimeout(()=>dismissRecap(),6500);
+}
+
+function hideRecap(){ recapEl.classList.remove('show'); }
+
+function dismissRecap(){
+  if(rcTimer){ clearTimeout(rcTimer); rcTimer=null; }
+  hideRecap();
+  if(recapPaused && pausedAtT!==null){
+    animStart=performance.now()-pausedAtT*DURATION_MS;
+    pausedAtT=null;
+  }
+  recapPaused=false;
+}
+
+rcBtn.addEventListener('click', dismissRecap);
+
+// ── ANIMATION STATE ───────────────────────────────────────
+let animStart=null, animDone=false, prevLvIdx=0;
+
+function replayClimb(){
+  animStart=null; animDone=false; userTOverride=null;
+  recapPaused=false; pausedAtT=null;
+  Object.keys(recapShown).forEach(k=>delete recapShown[k]);
+  prevLvIdx=0;
+  luBanner.classList.remove('show');
+  victoryEl.classList.remove('show');
   replayBtn.classList.remove('show');
-  if (luTimer) { clearTimeout(luTimer); luTimer = null; }
-  
-  avatars.forEach(av => {
-    av.el.classList.remove('falling');
-    av.isFallen = false;
-    av.el.style.opacity = '1';
-  });
-  
-  setTheme(CONFIG.levels[0], 0);
-}
-
-function animate(ts) {
+  confettiEl.classList.remove('show');
+  snowWrap.classList.remove('active');
+  stormEl.classList.remove('active');
+  hideRecap();
+  if(rcTimer){ clearTimeout(rcTimer); rcTimer=null; }
+  if(luTimer){ clearTimeout(luTimer); luTimer=null; }
+  avatars.forEach(av=>{ av.el.classList.remove('falling','winner'); av.isFallen=false; av.el.style.opacity='1'; });
+  applyTheme(CONFIG.levels[0]);
+  CONFIG.levels.forEach((_,i)=>{ document.getElementById(`pip${i}`)?.classList.remove('on'); });
+  document.getElementById('pip0')?.classList.add('on');
   requestAnimationFrame(animate);
-  if (!animStart) animStart = ts;
+}
 
-  let elapsed = ts - animStart;
-  let tAnim = Math.min(1.0, elapsed / DURATION_MS);
-  
-  // If user is scrubbing, use their position, otherwise animate
-  if (userTOverride !== null) {
-    tAnim = userTOverride;
-    // Keep elapsed caught up so animation doesn't jump when letting go
-    animStart = ts - tAnim * DURATION_MS;
+// ── MAIN ANIMATION LOOP ───────────────────────────────────
+function animate(ts){
+  requestAnimationFrame(animate);
+  if(!animStart) animStart=ts;
+
+  let t;
+  if(recapPaused && pausedAtT!==null){
+    t=pausedAtT;
+  } else if(userTOverride!==null){
+    t=userTOverride;
+    animStart=ts-t*DURATION_MS;
+  } else {
+    t=Math.min(1.0,(ts-animStart)/DURATION_MS);
   }
 
-  // Calculate current date
-  const dayMs = startMs + tAnim * spanMs;
-  
-  // Update theme based on player "You" (CurrentUser) level progress
-  const myPts = interpPts(ME, tAnim);
-  const curLv = resolveLevel(myPts);
-  const lvIdx = CONFIG.levels.indexOf(curLv);
-  
-  if (curLv.name !== prevLvlName && curLv.threshold > prevThresh) {
-    prevLvlName = curLv.name;
-    prevThresh = curLv.threshold;
-    curLvIdx = lvIdx;
-    triggerLevelUp(curLv);
-    setTheme(curLv, lvIdx);
-  } else if (lvIdx !== curLvIdx) {
-    curLvIdx = lvIdx;
-    setTheme(curLv, lvIdx);
+  // Date & progress bar
+  hudDate.textContent=fmtDate(startMs+t*spanMs);
+  progFill.style.width=`${(t*100).toFixed(2)}%`;
+
+  // Level detection
+  const myPts=interpPts(ME,t);
+  const curLv=resolveLevel(myPts);
+  const lvIdx=CONFIG.levels.indexOf(curLv);
+
+  if(lvIdx!==prevLvIdx){
+    if(lvIdx>prevLvIdx){
+      triggerLevelUp(CONFIG.levels[prevLvIdx], curLv);
+    }
+    prevLvIdx=lvIdx;
+    applyTheme(curLv);
+    snowWrap.classList.toggle('active', lvIdx===2||lvIdx===3);
+    stormEl.classList.toggle('active',  lvIdx===3||lvIdx===4);
+    CONFIG.levels.forEach((_,i)=>document.getElementById(`pip${i}`)?.classList.toggle('on',i<=lvIdx));
   }
-  tickTheme();
 
-  // ── HUD Updates ───────────────────────────────────────────────────
-  hudDate.textContent = fmtDate(dayMs);
-  hudCamp.textContent = curLv.name;
-  hudLevel.textContent = `Level ${curLv.roman}`;
-  hudProg.style.width = `${(tAnim * 100).toFixed(2)}%`;
+  // HUD labels
+  hudZone.textContent = curLv.name;
+  hudLevel.textContent= `LEVEL ${curLv.roman}`;
+  ciEmoji.textContent = curLv.emoji;
+  ciTitle.textContent = curLv.name;
+  ciAlt.textContent   = `Level ${curLv.roman} · ${curLv.alt}`;
+  tickerEl.textContent= TICKERS[clamp(Math.floor(t*TICKERS.length),0,TICKERS.length-1)];
 
-  // Left Camp Details
-  campTitle.textContent = curLv.name;
-  campAlt.textContent = `Level ${curLv.roman} · Elevation ${curLv.elevation}`;
-
-  // Recap Line (changes by timeline section)
-  const ri = Math.min(RECAPS.length - 1, Math.floor(tAnim * RECAPS.length));
-  hudRecap.textContent = RECAPS[ri];
-
-  // ── Update Player Avatars & Eliminations ──────────────────────────
-  let activeCount = 0;
-  
-  avatars.forEach(av => {
-    const elimT = ELIMINATIONS[av.player.name];
-    const pts = interpPts(av.player, tAnim);
-    
-    // Check if player should fall off the cliff
-    if (elimT && tAnim >= elimT) {
-      if (!av.isFallen) {
-        av.isFallen = true;
-        av.el.classList.add('falling');
-        // Fade out entirely after tumble finishes
-        setTimeout(() => {
-          if (av.isFallen) av.el.style.opacity = '0';
-        }, 2200);
+  // Recap triggers
+  if(!recapPaused){
+    for(const def of RECAP_DEFS){
+      if(!recapShown[def.level] && t>=def.triggerT){
+        recapShown[def.level]=true;
+        showRecap(def,t);
+        break;
       }
+    }
+  }
+
+  // Player positions & falling
+  let activeCount=0;
+  avatars.forEach(av=>{
+    const elimT=ELIM[av.player.name];
+    const isWinner=!elimT && t>=0.96;
+
+    if(elimT && t>=elimT){
+      if(!av.isFallen){ av.isFallen=true; av.el.classList.add('falling'); }
     } else {
-      av.isFallen = false;
-      av.el.classList.remove('falling');
-      av.el.style.opacity = '1';
+      if(av.isFallen){ av.isFallen=false; av.el.classList.remove('falling'); av.el.style.opacity='1'; }
       activeCount++;
-      
-      // Update normal mountain position
-      const coords = getPathCoords(pts);
-      av.el.style.left = `${coords.x}%`;
-      av.el.style.top = `${coords.y}%`;
+      const pts=interpPts(av.player,t);
+      const {x,y}=getPathCoords(pts);
+      av.el.style.left=`${x}%`;
+      av.el.style.top =`${y}%`;
+      av.el.classList.toggle('winner',isWinner);
     }
   });
 
-  hudSurvivors.textContent = `${activeCount} / 10`;
+  hudSurv.textContent=`${activeCount} / ${CONFIG.players.length}`;
 
-  // ── Update Leaderboard ────────────────────────────────────────────
+  // Leaderboard sort & update
   CONFIG.players
-    .map(p => {
-      const pts = interpPts(p, tAnim);
-      const elimT = ELIMINATIONS[p.name];
-      const isEliminated = elimT && tAnim >= elimT;
-      const isWinner = tAnim >= 0.95 && !elimT;
-      return { p, pts, isEliminated, isWinner };
+    .map(p=>({
+      p, pts:interpPts(p,t),
+      elim:!!ELIM[p.name]&&t>=ELIM[p.name],
+      won:!ELIM[p.name]&&t>=0.96
+    }))
+    .sort((a,b)=>{
+      if(a.elim&&!b.elim) return 1;
+      if(!a.elim&&b.elim) return -1;
+      return b.pts-a.pts;
     })
-    .sort((a, b) => {
-      // Eliminated players are always ranked below active ones
-      if (a.isEliminated && !b.isEliminated) return 1;
-      if (!a.isEliminated && b.isEliminated) return -1;
-      return b.pts - a.pts;
-    })
-    .forEach((item, index) => {
-      const lb = lbRows.find(r => r.player === item.p);
-      if (lb) {
-        // Position rows in DOM smoothly using CSS order (or we can just let flex handle order)
-        lb.rowEl.style.order = index;
-        lb.ptsEl.textContent = item.pts.toLocaleString();
-        
-        // Classes & Status
-        lb.rowEl.classList.toggle('eliminated', item.isEliminated);
-        lb.rowEl.classList.toggle('winner', item.isWinner);
-        
-        if (item.isWinner) {
-          lb.statusEl.textContent = "Winner 🏆";
-          lb.statusEl.className = "lb-status status-winner";
-        } else if (item.isEliminated) {
-          lb.statusEl.textContent = "Fallen ☠️";
-          lb.statusEl.className = "lb-status status-eliminated";
-        } else if (avFallenState(item.p.name, tAnim)) {
-          lb.statusEl.textContent = "Falling!";
-          lb.statusEl.className = "lb-status status-falling";
-        } else {
-          lb.statusEl.textContent = "Climbing";
-          lb.statusEl.className = "lb-status status-climbing";
-        }
-      }
+    .forEach(({p,pts,elim,won},i)=>{
+      const row=lbRows.find(r=>r.player===p); if(!row) return;
+      row.rowEl.style.order=i;
+      row.ptsEl.textContent=pts.toLocaleString();
+      row.rowEl.classList.toggle('elim',elim);
+      row.rowEl.classList.toggle('won', won);
+      if(won)       { row.stEl.textContent='Winner 🏆'; row.stEl.className='lb-st st-w'; }
+      else if(elim) { row.stEl.textContent='Fallen ☠️'; row.stEl.className='lb-st st-g'; }
+      else          { row.stEl.textContent='Climbing';  row.stEl.className='lb-st st-c'; }
     });
 
-  // ── End of Game Sequence ──────────────────────────────────────────
-  if (tAnim >= 1.0 && !animDone) {
-    animDone = true;
-    setTimeout(() => {
-      journeyBadge.classList.add('show');
-    }, 800);
-    setTimeout(() => replayBtn.classList.add('show'), 1800);
+  // Victory
+  if(t>=1.0&&!animDone){
+    animDone=true;
+    WINNERS.forEach(p=>{
+      const el=document.getElementById(`vc-pts-${p.name}`);
+      if(el) el.textContent=interpPts(p,1.0).toLocaleString()+' pts';
+    });
+    setTimeout(()=>{ victoryEl.classList.add('show'); confettiEl.classList.add('show'); },600);
+    setTimeout(()=>replayBtn.classList.add('show'),1800);
   }
 }
 
-// Check if a player is in the middle of falling (first 2 seconds of elimination)
-function avFallenState(name, t) {
-  const elimT = ELIMINATIONS[name];
-  if (!elimT) return false;
-  // If we're past their elimination but within the immediate 2-second visual falling window
-  const visualFallFrac = 2000 / DURATION_MS;
-  return t >= elimT && t < (elimT + visualFallFrac);
-}
-
-// ── Init ─────────────────────────────────────────────────────────────
-document.body.setAttribute('data-lv', '1');
-setTheme(CONFIG.levels[0], 0);
+// ── INIT ──────────────────────────────────────────────────
+applyTheme(CONFIG.levels[0]);
+document.getElementById('pip0')?.classList.add('on');
 requestAnimationFrame(animate);
-
 </script>
 </body>
 </html>
