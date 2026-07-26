@@ -22,8 +22,9 @@ export class HomeComponent {
       title: 'Galaxy Cluster Odyssey',
       tagline: 'Fly through the cosmos as your journey unfolds',
       description:
-        'A real-time 3-D space flight that replays your progress from start to today. ' +
-        'Watch a spiral galaxy drift past as your points climb through Scout, Navigator, Captain and Legend zones.',
+        'A real-time 3-D space flight past 5 uniquely themed galaxies — one per level. ' +
+        'Watch Orion Nursery, Aurora Stream, Emerald Veil, Crimson Tide and Stellar Crown drift by ' +
+        'as you climb from Scout to Legend over 5 days of the cluster.',
       assetPath: 'assets/galaxy-odyssey/index.html',
       tags: ['Three.js', 'Space', 'Timeline'],
       color: '#8deefc',
