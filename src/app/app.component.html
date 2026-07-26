@@ -1,61 +1,81 @@
 <div class="app-shell">
   <div class="backdrop"></div>
-  <div class="galaxy-scene" aria-label="Animated galaxy timeline from launch to the latest data point">
-    <div class="galaxy-core"></div>
-    <div class="nebula nebula-one"></div>
-    <div class="nebula nebula-two"></div>
-    <div class="spiral-arm arm-a"></div>
-    <div class="spiral-arm arm-b"></div>
-    <div class="spiral-arm arm-c"></div>
-    <div class="star-field"></div>
+  <div class="halo"></div>
 
-    <div class="player-orb" *ngFor="let player of currentPlayers" [ngStyle]="getPlayerStyle(player)">
-      <span class="player-label">{{ player.name }}</span>
-    </div>
-  </div>
-
-  <div class="hud">
-    <section class="hero">
+  <header class="topbar">
+    <div>
       <p class="eyebrow">Galaxy Cluster Odyssey</p>
-      <h1>From the first spark to the current surge.</h1>
-      <p class="lead">A smooth, side-view voyage through each day of your interstellar climb. Every orbit carries the current points, level, and map for your crew.</p>
-
-      <div class="controls">
-        <button type="button" (click)="restartTimeline()">Replay timeline</button>
-        <div class="timeline-pill">{{ currentDayLabel }}</div>
+      <h1>Fly your own route through each galaxy as the story unfolds.</h1>
+    </div>
+    <div class="topbar-actions">
+      <div class="view-switcher" role="tablist" aria-label="View selector">
+        <button
+          *ngFor="let option of viewOptions"
+          type="button"
+          class="view-pill"
+          [class.active]="selectedView === option.key"
+          (click)="selectView(option.key)">
+          {{ option.label }}
+        </button>
       </div>
+      <button type="button" class="toggle-pill" (click)="toggleOtherPlayers()">
+        {{ showOthers ? 'Hide other pilots' : 'Show other pilots' }}
+      </button>
+    </div>
+  </header>
 
-      <div class="timeline-card">
-        <div class="timeline-track">
-          <div class="timeline-fill" [style.width.%]="timelinePercent"></div>
+  <main class="content-grid">
+    <section class="scene-card">
+      <div class="scene-frame" [ngStyle]="sceneStyle" [attr.data-view]="selectedView">
+        <div class="scene-grid"></div>
+        <div class="portal"></div>
+        <div class="travel-lane"></div>
+        <div class="cockpit-glow"></div>
+        <div class="ship"></div>
+        <div class="player-orb" *ngFor="let player of visiblePlayers; let i = index" [ngStyle]="getPlayerStyle(player, i)">
+          <span class="player-label">{{ player.name }}</span>
         </div>
-        <div class="timeline-meta">
-          <span>{{ timelineDays[0].label }}</span>
-          <span>{{ timelineDays[timelineDays.length - 1].label }}</span>
-        </div>
+      </div>
+      <div class="scene-footer">
+        <div class="chip">{{ currentDayLabel }}</div>
+        <div class="chip">{{ currentLevel.name }} · {{ currentMap }}</div>
       </div>
     </section>
 
-    <aside class="panel">
-      <div class="recap-card">
-        <p class="card-label">Current recap</p>
-        <h2>{{ currentDayLabel }}</h2>
+    <aside class="info-panel">
+      <article class="hero-card">
+        <p class="card-label">Current perspective</p>
+        <h2>{{ currentLevel.name }} gateway</h2>
         <p>{{ currentRecap }}</p>
-      </div>
+        <p class="view-copy">{{ getCurrentViewDescription() }}</p>
+      </article>
 
-      <div class="players-list">
-        <article class="player-card" *ngFor="let player of currentPlayers">
-          <div class="player-title">
+      <article class="stats-card">
+        <div class="stat-row">
+          <span>Travel</span>
+          <strong>{{ timelinePercent | number:'1.0-0' }}%</strong>
+        </div>
+        <div class="timeline-track">
+          <div class="timeline-fill" [style.width.%]="timelinePercent"></div>
+        </div>
+        <div class="stat-row tiny">
+          <span>{{ timelineDays[0].label }}</span>
+          <span>{{ timelineDays[timelineDays.length - 1].label }}</span>
+        </div>
+      </article>
+
+      <article class="players-card">
+        <div class="player-row" *ngFor="let player of currentPlayers">
+          <div class="player-name">
             <span class="dot" [style.background]="player.color"></span>
-            <h3>{{ player.name }}</h3>
+            <span>{{ player.name }}</span>
           </div>
-          <p class="points">{{ player.points | number }} pts</p>
-          <div class="meta-row">
+          <div class="player-value">
+            <strong>{{ player.points | number }} pts</strong>
             <span>{{ player.level }}</span>
-            <span>{{ player.currentMap }}</span>
           </div>
-        </article>
-      </div>
+        </div>
+      </article>
     </aside>
-  </div>
+  </main>
 </div>
