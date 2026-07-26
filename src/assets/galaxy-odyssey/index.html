@@ -52,7 +52,7 @@
     }
 
     /* Pin each chip independently */
-    .chip-left   { left:1.8rem; }
+    .chip-left   { left:1.8rem; display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem .5rem .55rem; }
     .chip-center { left:50%; transform:translateX(-50%); text-align:center; white-space:nowrap; }
     .chip-right  { right:1.8rem; text-align:right; min-width:140px; }
 
@@ -200,18 +200,18 @@
     }
     .warp-flash.pop { opacity:0.38; }
 
-    /* ─── Back button ────────────────────────────────────────────────── */
-    .back-btn {
-      position:fixed; top:1.5rem; right:1.8rem; z-index:30;
+    /* ─── Back button — integrated into date chip ───────────────────── */
+    .back-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:1.6rem; height:1.6rem;
+      border-radius:50%; background:rgba(255,255,255,0.08);
+      color:rgba(255,255,255,0.55); text-decoration:none; font-size:.82rem;
+      border:1px solid rgba(255,255,255,0.10);
+      transition:background .2s,color .2s; flex-shrink:0;
       pointer-events:all; cursor:pointer;
-      display:inline-flex; align-items:center; gap:.4rem;
-      background:rgba(4,8,28,0.76); border:1px solid rgba(255,255,255,0.1);
-      border-radius:3rem; padding:.62rem 1.25rem;
-      backdrop-filter:blur(18px); font-size:.78rem; font-family:inherit;
-      color:rgba(255,255,255,0.65); text-decoration:none;
-      transition:color .2s,border-color .2s,background .2s;
     }
-    .back-btn:hover { color:var(--accent); border-color:var(--dim); }
+    .back-icon:hover { background:rgba(255,255,255,0.16); color:var(--accent); }
+    .chip-left-inner { border-left:1px solid rgba(255,255,255,0.12); padding-left:.6rem; }
 
     /* ─── Replay button (appears when animation ends) ────────────────── */
     .replay-btn {
@@ -256,22 +256,27 @@
 
 <canvas id="three-canvas"></canvas>
 <div class="vignette"></div>
-
-<a class="back-btn" href="#" onclick="history.length>1?history.back():(window.location='./../../');return false;">← Missions</a>
 <div class="warp-flash" id="warp-flash"></div>
 
 <!-- HUD -->
 <div class="hud">
   <!-- Each chip ABSOLUTELY positioned — no flex, no layout shift, no flicker -->
   <div class="hud-top">
+    <!-- Left: back nav + date — combined, no position conflict -->
     <div class="glass-chip chip-left">
-      <div class="chip-label">Date</div>
-      <div class="chip-value" id="hud-date">—</div>
+      <a class="back-icon" href="#" title="Back to Missions"
+         onclick="history.length>1?history.back():(window.location='./../../');return false;">←</a>
+      <div class="chip-left-inner">
+        <div class="chip-label">Date</div>
+        <div class="chip-value" id="hud-date">—</div>
+      </div>
     </div>
+    <!-- Center: level — absolutely centered, cannot be nudged by others -->
     <div class="glass-chip chip-center">
       <div class="zone-sub" id="hud-galaxy">Orion Nursery</div>
       <div class="zone-main" id="hud-level">Scout</div>
     </div>
+    <!-- Right: points — fixed min-width so number width change never shifts center -->
     <div class="glass-chip chip-right">
       <div class="chip-label">Points</div>
       <div class="pts-val" id="hud-pts">0</div>
