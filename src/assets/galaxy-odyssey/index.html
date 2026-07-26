@@ -988,11 +988,14 @@ function animate(ts){
   hudLevel.textContent = lv.name;
   hudPts.textContent   = pts.toLocaleString();
   hudProg.style.width  = (t*100).toFixed(2)+'%';
-  galTitle.textContent = CONFIG.levels[gi].galaxy;
-  galRank.textContent  = `Level ${CONFIG.levels[gi].roman} · ${CONFIG.levels[gi].name}`;
+  // Left panel: always shows the level the player has EARNED (consistent with HUD)
+  galTitle.textContent = lv.galaxy;
+  galRank.textContent  = `Level ${lv.roman} · ${lv.name}`;
 
+  // Recap: always current (re-render every frame in same slot)
   const ri=Math.min(RECAPS.length-1, Math.floor(t*RECAPS.length));
-  if(ri!==lastRecapIdx){ lastRecapIdx=ri; hudRecap.textContent=RECAPS[ri](ME,lv.name,pts,lv.galaxy); }
+  if(ri!==lastRecapIdx) lastRecapIdx=ri;
+  hudRecap.textContent=RECAPS[lastRecapIdx](ME,lv.name,pts,lv.galaxy);
 
   // Leaderboard
   const allP=CONFIG.players.map(p=>({p,pts:interpPts(p,t)})).sort((a,b)=>b.pts-a.pts);
