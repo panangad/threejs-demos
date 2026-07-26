@@ -5,179 +5,230 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Galaxy Cluster Odyssey</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --accent:   #4aeeff;
       --accent2:  #88ffff;
-      --dim:      rgba(74,238,255,0.18);
-      --glow:     rgba(74,238,255,0.25);
-      --bg-pulse: rgba(0,20,40,0.0);
+      --dim:      rgba(74,238,255,0.22);
+      --glow:     rgba(74,238,255,0.28);
+      --chip-bg:  rgba(4,10,32,0.80);
+      --chip-br:  3rem;
+      --prog-col: linear-gradient(90deg,#4aeeff,#88ffff);
     }
+    [data-lv="1"] { --chip-bg:rgba(18,4,36,0.84); --chip-br:0.7rem; }
+    [data-lv="2"] { --chip-bg:rgba(4,20,18,0.84); --chip-br:0.3rem; }
+    [data-lv="3"] { --chip-bg:rgba(28,8,2,0.88);  --chip-br:0.15rem; }
+    [data-lv="4"] { --chip-bg:rgba(24,20,2,0.88); --chip-br:0.5rem;  }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Inter',system-ui,sans-serif; color:#e8f4ff; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:100%; height:100%; overflow:hidden; background:#000;
+      font-family:'Inter',system-ui,sans-serif; color:#e8f4ff; }
 
     canvas { display:block; position:fixed; inset:0; z-index:0; }
 
-    /* ── Vignette ── */
+    /* Vignette */
     .vignette {
       position:fixed; inset:0; z-index:1; pointer-events:none;
-      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,6,0.7) 100%);
+      background:radial-gradient(ellipse at center, transparent 42%, rgba(0,0,6,0.78) 100%);
     }
 
-    /* ── HUD ── */
+    /* HUD wrapper */
     .hud { position:fixed; inset:0; z-index:2; pointer-events:none; }
 
-    /* TOP */
+    /* ── Top bar ── */
     .hud-top {
       position:absolute; top:0; left:0; right:0;
       display:flex; align-items:flex-start; justify-content:space-between;
-      padding:1.6rem 1.8rem; gap:1rem;
+      padding:1.5rem 1.8rem; gap:1rem;
     }
 
     .glass-chip {
-      background: rgba(4,8,28,0.76);
-      border: 1px solid var(--dim);
-      border-radius:3rem;
+      background:var(--chip-bg);
+      border:1px solid var(--dim);
+      border-radius:var(--chip-br);
       padding:.65rem 1.3rem;
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      transition: border-color .7s ease;
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      transition:border-color .9s ease, background .9s ease, border-radius .9s ease, box-shadow .9s ease;
+    }
+    [data-lv="4"] .glass-chip {
+      box-shadow:0 0 18px rgba(255,215,0,0.12), inset 0 0 12px rgba(255,215,0,0.05);
     }
 
     .chip-label {
-      font-size:.62rem; letter-spacing:.28em; text-transform:uppercase;
-      color:rgba(255,255,255,0.38); margin-bottom:.2rem;
+      font-size:.58rem; letter-spacing:.28em; text-transform:uppercase;
+      color:rgba(255,255,255,0.36); margin-bottom:.18rem;
     }
     .chip-value {
-      font-size:.95rem; font-weight:600;
-      color: var(--accent);
-      transition: color .7s ease;
+      font-size:.92rem; font-weight:700;
+      color:var(--accent);
+      transition:color .9s ease;
     }
 
+    /* Center galaxy chip */
     .hud-zone { text-align:center; }
     .zone-sub {
-      font-size:.62rem; letter-spacing:.3em; text-transform:uppercase;
-      color:rgba(255,255,255,0.42); margin-bottom:.25rem;
-      transition: color .7s ease;
+      font-size:.58rem; letter-spacing:.32em; text-transform:uppercase;
+      color:rgba(255,255,255,0.38); margin-bottom:.22rem;
+      transition:color .9s ease;
     }
     .zone-main {
-      font-size:1.06rem; font-weight:700; color:#fff; letter-spacing:.04em;
+      font-size:1rem; font-weight:800; color:#fff; letter-spacing:.06em;
+      font-family:'Orbitron', sans-serif;
+      text-shadow:0 0 24px var(--glow);
+      transition:text-shadow .9s ease;
     }
 
+    /* Points chip */
     .hud-pts { text-align:right; }
     .pts-val {
-      font-size:1.52rem; font-weight:800;
-      color: var(--accent);
+      font-size:1.55rem; font-weight:800;
+      color:var(--accent);
       font-variant-numeric:tabular-nums; line-height:1;
-      transition: color .7s ease;
+      font-family:'Orbitron', sans-serif;
+      transition:color .9s ease;
     }
 
-    /* BOTTOM */
+    /* ── Bottom bar ── */
     .hud-bottom {
       position:absolute; bottom:0; left:0; right:0;
-      padding:1.4rem 1.8rem 1.8rem;
+      padding:1.2rem 1.8rem 1.8rem;
     }
     .recap-line {
-      font-size:.84rem; color:rgba(255,255,255,0.52);
-      text-align:center; margin-bottom:.9rem; min-height:1.2em;
+      font-size:.82rem; color:rgba(255,255,255,0.50);
+      text-align:center; margin-bottom:.8rem; min-height:1.2em;
+      letter-spacing:.02em;
     }
-    .progress-wrap { max-width:700px; margin:0 auto; }
+    .progress-wrap { max-width:680px; margin:0 auto; }
     .progress-bar {
-      height:3px; background:rgba(255,255,255,0.09); border-radius:2px;
-      overflow:hidden; margin-bottom:.5rem;
+      height:3px; background:rgba(255,255,255,0.08); border-radius:2px;
+      overflow:hidden; margin-bottom:.45rem; position:relative;
     }
+    [data-lv="2"] .progress-bar { height:4px; }
+    [data-lv="3"] .progress-bar { height:4px; border-radius:0; }
+    [data-lv="4"] .progress-bar { height:5px; }
     .progress-fill {
       height:100%; width:0%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      box-shadow: 0 0 12px var(--glow);
+      background:var(--prog-col);
+      box-shadow:0 0 14px var(--glow);
       border-radius:2px;
-      transition: background .7s ease, box-shadow .7s ease, width .12s linear;
+      transition:background .9s ease, box-shadow .9s ease, width .08s linear;
     }
+    [data-lv="3"] .progress-fill { border-radius:0; }
     .progress-labels {
       display:flex; justify-content:space-between;
-      font-size:.68rem; color:rgba(255,255,255,0.28);
+      font-size:.64rem; color:rgba(255,255,255,0.25);
       font-variant-numeric:tabular-nums;
     }
 
-    /* GALAXY NAME banner (mid-left) */
+    /* Level pip dots */
+    .level-pips {
+      display:flex; justify-content:center; gap:.5rem;
+      margin-bottom:.55rem;
+    }
+    .pip {
+      width:6px; height:6px; border-radius:50%;
+      background:rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.1);
+      transition:background .5s, box-shadow .5s, transform .3s;
+    }
+    .pip.active {
+      background:var(--accent);
+      box-shadow:0 0 8px var(--glow);
+      transform:scale(1.4);
+    }
+
+    /* ── Galaxy name mid-left ── */
     .galaxy-name-wrap {
       position:fixed; left:1.8rem; top:50%; transform:translateY(-50%);
       z-index:3; pointer-events:none;
     }
     .galaxy-eyebrow {
-      font-size:.58rem; letter-spacing:.38em; text-transform:uppercase;
-      color:rgba(255,255,255,0.3); margin-bottom:.35rem;
+      font-size:.54rem; letter-spacing:.38em; text-transform:uppercase;
+      color:rgba(255,255,255,0.28); margin-bottom:.3rem;
     }
     .galaxy-title {
-      font-size:1.3rem; font-weight:700;
-      color: var(--accent); opacity:.85;
-      transition: color .7s ease, opacity .7s ease;
+      font-size:1.25rem; font-weight:700;
+      font-family:'Orbitron', sans-serif;
+      color:var(--accent); opacity:.9;
+      transition:color .9s ease, opacity .9s ease, text-shadow .9s ease;
       line-height:1.1;
+      text-shadow:0 0 30px var(--glow);
+    }
+    .galaxy-rank {
+      font-size:.62rem; color:rgba(255,255,255,0.28);
+      margin-top:.3rem; letter-spacing:.12em;
     }
 
-    /* LEADERBOARD */
+    /* ── Leaderboard ── */
     .leaderboard {
       position:fixed; right:1.8rem; top:50%; transform:translateY(-50%);
       z-index:5; pointer-events:none;
-      display:flex; flex-direction:column; gap:.4rem;
+      display:flex; flex-direction:column; gap:.35rem;
     }
     .lb-row {
-      display:flex; align-items:center; gap:.5rem;
-      background: rgba(4,8,28,0.68);
-      border:1px solid rgba(255,255,255,0.08);
-      border-radius:2rem; padding:.4rem .85rem .4rem .5rem;
+      display:flex; align-items:center; gap:.45rem;
+      background:rgba(4,8,28,0.62);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:2rem; padding:.38rem .8rem .38rem .48rem;
       backdrop-filter:blur(10px);
+      transition:border-color .9s, background .9s;
     }
-    .lb-row.me { border-color: var(--dim); background: rgba(0,10,30,0.8); }
-    .lb-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-    .lb-name { font-size:.73rem; color:rgba(255,255,255,0.6); min-width:2.4rem; }
-    .lb-row.me .lb-name { color:var(--accent); font-weight:600; transition:color .7s; }
-    .lb-pts { font-size:.7rem; color:rgba(255,255,255,0.38); font-variant-numeric:tabular-nums; margin-left:auto; padding-left:.55rem; }
-    .lb-row.me .lb-pts { color:rgba(255,255,255,0.7); }
+    .lb-row.me {
+      border-color:var(--dim);
+      background:rgba(0,8,26,0.82);
+      box-shadow:0 0 12px var(--glow);
+    }
+    .lb-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .lb-rank { font-size:.62rem; color:rgba(255,255,255,0.28); min-width:.8rem; text-align:center; }
+    .lb-name { font-size:.71rem; color:rgba(255,255,255,0.56); min-width:2.2rem; }
+    .lb-row.me .lb-name { color:var(--accent); font-weight:700; transition:color .9s; }
+    .lb-pts  { font-size:.68rem; color:rgba(255,255,255,0.35); font-variant-numeric:tabular-nums; margin-left:auto; padding-left:.5rem; }
+    .lb-row.me .lb-pts { color:rgba(255,255,255,0.72); }
 
-    /* LEVEL UP */
+    /* ── Level Up banner ── */
     .level-up {
       position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
       text-align:center; pointer-events:none; z-index:20;
-      opacity:0; transition:opacity .55s ease;
+      opacity:0; transition:opacity .45s ease;
     }
     .level-up.show { opacity:1; }
     .lu-eyebrow {
-      font-size:.65rem; letter-spacing:.45em; text-transform:uppercase;
-      color:rgba(255,255,255,0.45); margin-bottom:.6rem;
+      font-size:.62rem; letter-spacing:.48em; text-transform:uppercase;
+      color:rgba(255,255,255,0.42); margin-bottom:.5rem;
     }
     .lu-big {
-      font-size:3.8rem; font-weight:800; line-height:1;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      font-size:4rem; font-weight:900; line-height:1;
+      font-family:'Orbitron', sans-serif;
+      background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
       -webkit-background-clip:text; -webkit-text-fill-color:transparent;
       background-clip:text;
-      filter: drop-shadow(0 0 40px var(--glow));
-      transition: background .7s ease;
+      filter:drop-shadow(0 0 50px var(--glow));
+      transition:background .9s ease;
     }
-    .lu-sub { font-size:1.05rem; color:rgba(255,255,255,0.6); margin-top:.65rem; }
+    .lu-sub { font-size:1rem; color:rgba(255,255,255,0.55); margin-top:.6rem; }
 
-    /* BACK */
+    /* ── Back button ── */
     .back-btn {
-      position:fixed; top:1.6rem; right:1.8rem; z-index:30;
+      position:fixed; top:1.5rem; right:1.8rem; z-index:30;
       pointer-events:all; cursor:pointer;
       display:inline-flex; align-items:center; gap:.4rem;
       background:rgba(4,8,28,0.76); border:1px solid rgba(255,255,255,0.1);
-      border-radius:3rem; padding:.65rem 1.3rem;
-      backdrop-filter:blur(18px); font-size:.82rem; font-family:inherit;
-      color:rgba(255,255,255,0.7); text-decoration:none;
+      border-radius:3rem; padding:.62rem 1.25rem;
+      backdrop-filter:blur(18px); font-size:.78rem; font-family:inherit;
+      color:rgba(255,255,255,0.65); text-decoration:none;
       transition:color .2s, border-color .2s, background .2s;
     }
-    .back-btn:hover { color:var(--accent); border-color:var(--dim); background:rgba(0,10,30,0.85); }
+    .back-btn:hover { color:var(--accent); border-color:var(--dim); background:rgba(0,8,26,0.88); }
 
-    /* WARP flash overlay */
+    /* ── Warp flash ── */
     .warp-flash {
       position:fixed; inset:0; z-index:15; pointer-events:none;
       background:radial-gradient(ellipse at center, #fff 0%, transparent 70%);
-      opacity:0; transition:opacity .15s ease;
+      opacity:0; transition:opacity .12s ease;
     }
-    .warp-flash.pop { opacity:0.35; }
+    .warp-flash.pop { opacity:0.40; }
   </style>
 </head>
 <body>
@@ -185,10 +236,7 @@
 <canvas id="three-canvas"></canvas>
 <div class="vignette"></div>
 
-<!-- Back -->
 <a class="back-btn" href="#" onclick="history.length>1?history.back():(window.location='./../../');return false;">← Missions</a>
-
-<!-- Warp flash -->
 <div class="warp-flash" id="warp-flash"></div>
 
 <!-- HUD -->
@@ -196,39 +244,42 @@
   <div class="hud-top">
     <div class="glass-chip">
       <div class="chip-label">Date</div>
-      <div class="chip-value" id="hud-date">Jul 22, 2026</div>
+      <div class="chip-value" id="hud-date">—</div>
     </div>
     <div class="glass-chip hud-zone">
-      <div class="zone-sub" id="hud-map">Orion Nursery</div>
+      <div class="zone-sub" id="hud-map">Galaxy</div>
       <div class="zone-main" id="hud-level">Scout</div>
     </div>
     <div class="glass-chip hud-pts">
       <div class="chip-label">Points</div>
-      <div class="pts-val" id="hud-pts">500</div>
+      <div class="pts-val" id="hud-pts">0</div>
     </div>
   </div>
+
   <div class="hud-bottom">
     <p class="recap-line" id="hud-recap">Beginning the cluster odyssey…</p>
     <div class="progress-wrap">
+      <div class="level-pips" id="pips"></div>
       <div class="progress-bar"><div class="progress-fill" id="hud-prog"></div></div>
       <div class="progress-labels">
-        <span id="prog-start">Jul 22, 2026</span>
-        <span id="prog-end">Jul 26, 2026</span>
+        <span id="prog-start">—</span>
+        <span id="prog-end">—</span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Galaxy name -->
+<!-- Galaxy name mid-left -->
 <div class="galaxy-name-wrap">
   <div class="galaxy-eyebrow">Now crossing</div>
   <div class="galaxy-title" id="galaxy-title">Orion Nursery</div>
+  <div class="galaxy-rank" id="galaxy-rank">Level I · Scout</div>
 </div>
 
 <!-- Leaderboard -->
 <div class="leaderboard" id="leaderboard"></div>
 
-<!-- Level up -->
+<!-- Level Up -->
 <div class="level-up" id="lvl-up">
   <div class="lu-eyebrow">Level Up</div>
   <div class="lu-big" id="lu-big">Navigator</div>
@@ -239,94 +290,122 @@
 <script>
 'use strict';
 
-// ═══════════════════════════════════════════════════════
-//  DATA
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  CONFIG & DATA
+// ═══════════════════════════════════════════════════
 const CONFIG = {
-  startDate: '2026-07-22',
-  endDate:   '2026-07-26',
-  playbackMs: 48000,
+  startDate:  '2026-07-22',
+  endDate:    '2026-07-26',
+  playbackMs: 8000, // 8-second recap — shows all 5 levels quickly
 
   levels: [
-    { name:'Scout',     galaxy:'Orion Nursery',  threshold:0,    accent:'#4aeeff', accent2:'#88ffff', glow:'rgba(74,238,255,0.28)',  dim:'rgba(74,238,255,0.18)'  },
-    { name:'Navigator', galaxy:'Aurora Stream',  threshold:1000, accent:'#ff6ec7', accent2:'#ff44aa', glow:'rgba(255,110,199,0.28)', dim:'rgba(255,110,199,0.18)' },
-    { name:'Captain',   galaxy:'Emerald Veil',   threshold:2500, accent:'#00e8a8', accent2:'#aaff88', glow:'rgba(0,232,168,0.28)',   dim:'rgba(0,232,168,0.18)'   },
-    { name:'Commander', galaxy:'Crimson Tide',   threshold:4500, accent:'#ff6633', accent2:'#ffaa44', glow:'rgba(255,102,51,0.28)',  dim:'rgba(255,102,51,0.18)'  },
-    { name:'Legend',    galaxy:'Stellar Crown',  threshold:7000, accent:'#ffd700', accent2:'#fff580', glow:'rgba(255,215,0,0.30)',   dim:'rgba(255,215,0,0.20)'   },
+    { name:'Scout',     roman:'I',   galaxy:'Orion Nursery',  threshold:0,
+      accent:'#4aeeff', accent2:'#88ffff', glow:'rgba(74,238,255,0.30)', dim:'rgba(74,238,255,0.22)',
+      prog:'linear-gradient(90deg,#4aeeff,#88ffff)' },
+    { name:'Navigator', roman:'II',  galaxy:'Aurora Stream',  threshold:1800,
+      accent:'#d86eff', accent2:'#ff8dff', glow:'rgba(216,110,255,0.30)', dim:'rgba(216,110,255,0.22)',
+      prog:'linear-gradient(90deg,#d86eff,#ff8dff)' },
+    { name:'Captain',   roman:'III', galaxy:'Emerald Veil',   threshold:3800,
+      accent:'#00e8a8', accent2:'#88ffd0', glow:'rgba(0,232,168,0.30)', dim:'rgba(0,232,168,0.22)',
+      prog:'linear-gradient(90deg,#00e8a8,#88ffd0)' },
+    { name:'Commander', roman:'IV',  galaxy:'Crimson Tide',   threshold:5800,
+      accent:'#ff6633', accent2:'#ffaa44', glow:'rgba(255,102,51,0.30)', dim:'rgba(255,102,51,0.22)',
+      prog:'linear-gradient(90deg,#ff6633,#ffaa44)' },
+    { name:'Legend',    roman:'V',   galaxy:'Stellar Crown',  threshold:7800,
+      accent:'#ffd700', accent2:'#fff580', glow:'rgba(255,215,0,0.35)', dim:'rgba(255,215,0,0.24)',
+      prog:'linear-gradient(90deg,#ffd700,#fff580)' },
   ],
 
   players: [
-    { name:'You',  isCurrentUser:true,  color:'#4aeeff',
-      data:[{date:'2026-07-22',pts:500},{date:'2026-07-23',pts:1300},{date:'2026-07-24',pts:2800},{date:'2026-07-25',pts:5000},{date:'2026-07-26',pts:7600}] },
-    { name:'Lyra', color:'#ff8bd0',
-      data:[{date:'2026-07-22',pts:280},{date:'2026-07-23',pts:950},{date:'2026-07-24',pts:2300},{date:'2026-07-25',pts:4200},{date:'2026-07-26',pts:6500}] },
+    { name:'You',  isCurrentUser:true, color:'#4aeeff',
+      data:[{date:'2026-07-22',pts:450},{date:'2026-07-23',pts:2400},{date:'2026-07-24',pts:4600},{date:'2026-07-25',pts:6600},{date:'2026-07-26',pts:8800}] },
+    { name:'Lyra', color:'#ff88cc',
+      data:[{date:'2026-07-22',pts:380},{date:'2026-07-23',pts:2000},{date:'2026-07-24',pts:3900},{date:'2026-07-25',pts:5500},{date:'2026-07-26',pts:7200}] },
     { name:'Rook', color:'#8dffb3',
-      data:[{date:'2026-07-22',pts:240},{date:'2026-07-23',pts:820},{date:'2026-07-24',pts:1900},{date:'2026-07-25',pts:3400},{date:'2026-07-26',pts:5100}] },
+      data:[{date:'2026-07-22',pts:310},{date:'2026-07-23',pts:1500},{date:'2026-07-24',pts:3000},{date:'2026-07-25',pts:4400},{date:'2026-07-26',pts:5900}] },
     { name:'Nia',  color:'#ffd69f',
-      data:[{date:'2026-07-22',pts:180},{date:'2026-07-23',pts:680},{date:'2026-07-24',pts:1600},{date:'2026-07-25',pts:2800},{date:'2026-07-26',pts:4300}] },
+      data:[{date:'2026-07-22',pts:240},{date:'2026-07-23',pts:1100},{date:'2026-07-24',pts:2200},{date:'2026-07-25',pts:3400},{date:'2026-07-26',pts:4800}] },
     { name:'Tavi', color:'#c6a8ff',
-      data:[{date:'2026-07-22',pts:150},{date:'2026-07-23',pts:550},{date:'2026-07-24',pts:1200},{date:'2026-07-25',pts:2100},{date:'2026-07-26',pts:3400}] },
+      data:[{date:'2026-07-22',pts:180},{date:'2026-07-23',pts:750},{date:'2026-07-24',pts:1600},{date:'2026-07-25',pts:2600},{date:'2026-07-26',pts:3700}] },
   ]
 };
 
-// ═══════════════════════════════════════════════════════
-//  GALAXY VISUAL DEFINITIONS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  GALAXY VISUAL DEFINITIONS  (natural stellar colors)
+// ═══════════════════════════════════════════════════
+// Each galaxy has a unique character, stellar population mix, and layout.
+// Colors inspired by real Hubble/JWST imagery color palettes.
 const GALAXY_DEFS = [
-  { // 1 – Orion Nursery (Scout) – ice-blue 2-arm spiral, viewed ~15° off edge-on
-    n: 38000, arms: 2, radius: 280, coreR: 30,
-    tight: 0.040, thick: 0.065, hasBar: false, isEllip: false,
-    cx:'#fff8e0', c1:'#c8e8ff', c2:'#5599ff', c3:'#2244bb', ch:'#ff44aa',
-    pos:[0,0,0], rot:[0.28,0,0.04],
+  { // 1 – Orion Nursery · Scout · Young blue-white 2-arm spiral
+    // Like M74/M51 — lots of hot OB stars in arms, pink HII regions, warm yellow-orange bulge
+    n:100000, arms:2, radius:300, coreR:32,
+    tight:0.042, thick:0.058, hasBar:false, isEllip:false,
+    // core=warm yellow bulge, c1=blue-white young, c2=intense blue OB, c3=outer disk blue, ch=HII pink
+    cx:'#ffe8b0', c1:'#c8e4ff', c2:'#4488ff', c3:'#1833aa', ch:'#ff3388',
+    // extra: globular clusters tint
+    gc:'#ffeedd',
+    pos:[0,0,0], rot:[0.24,0,0.04],
   },
-  { // 2 – Aurora Stream (Navigator) – 3-arm pink/violet, loosely wound
-    n: 34000, arms: 3, radius: 265, coreR: 25,
-    tight: 0.033, thick: 0.068, hasBar: false, isEllip: false,
-    cx:'#fff2dc', c1:'#ffaacc', c2:'#cc44ee', c3:'#7700bb', ch:'#ffbbee',
-    pos:[-155, 15, -690], rot:[0.22,0.82,-0.04],
+  { // 2 – Aurora Stream · Navigator · Mature 3-arm violet-pink spiral
+    // Like NGC 4038 or M81 variant — older stellar pop, lavender arms, soft magenta nebulae
+    n:90000, arms:3, radius:280, coreR:28,
+    tight:0.036, thick:0.065, hasBar:false, isEllip:false,
+    // core=cream-ivory, c1=lavender, c2=violet, c3=deep purple, ch=magenta nebulae
+    cx:'#fff0e0', c1:'#e8aeff', c2:'#aa44ee', c3:'#550088', ch:'#ff44cc',
+    gc:'#ffe8ff',
+    pos:[-155,15,-700], rot:[0.22,0.82,-0.04],
   },
-  { // 3 – Emerald Veil (Captain) – barred teal/gold spiral
-    n: 42000, arms: 2, radius: 300, coreR: 32, barLen: 100,
-    tight: 0.046, thick: 0.055, hasBar: true, isEllip: false,
-    cx:'#fffacc', c1:'#66ffcc', c2:'#00cc88', c3:'#004422', ch:'#ffcc00',
-    pos:[-55,-25,-1385], rot:[0.32,0.32,0.07],
+  { // 3 – Emerald Veil · Captain · Barred teal-gold spiral
+    // Unique — ionized oxygen teal arms (like some blue-compact galaxies), gold bar, dense core
+    n:110000, arms:2, radius:320, coreR:36, barLen:110,
+    tight:0.048, thick:0.052, hasBar:true, isEllip:false,
+    // core=warm gold, c1=teal-cyan, c2=emerald green, c3=deep teal, ch=gold HII
+    cx:'#fff8cc', c1:'#44ffcc', c2:'#00cc88', c3:'#003322', ch:'#ffd700',
+    gc:'#ffffcc',
+    pos:[-60,-22,-1405], rot:[0.32,0.35,0.07],
   },
-  { // 4 – Crimson Tide (Commander) – elliptical, red-orange, slightly flattened
-    n: 32000, arms: 0, radius: 260, coreR: 38,
-    tight: 0, thick: 0.5, hasBar: false, isEllip: true,
-    cx:'#fff0e0', c1:'#ffaa66', c2:'#cc3300', c3:'#550011', ch:null,
-    pos:[-265,22,-2085], rot:[0.18,0.52,0.02],
+  { // 4 – Crimson Tide · Commander · Elliptical galaxy, old warm stars
+    // Like M87 or NGC 1052 — dominated by K/M giant stars, no young blue stars, warm orange-red
+    n:85000, arms:0, radius:270, coreR:42,
+    tight:0, thick:0.55, hasBar:false, isEllip:true,
+    // core=hot orange-white, c1=warm orange, c2=deep rust, c3=dark red, ch=null
+    cx:'#ffece0', c1:'#ffaa66', c2:'#dd4411', c3:'#440008', ch:null,
+    gc:'#ffddcc',
+    pos:[-270,24,-2110], rot:[0.18,0.54,0.03],
   },
-  { // 5 – Stellar Crown (Legend) – 4-arm grand golden spiral, most dense & largest
-    n: 58000, arms: 4, radius: 340, coreR: 40,
-    tight: 0.038, thick: 0.050, hasBar: false, isEllip: false,
-    cx:'#ffffff', c1:'#ffeedd', c2:'#ccaaff', c3:'#6644ff', ch:'#44ffdd',
-    pos:[-100,8,-2785], rot:[0.26,0.12,-0.02],
+  { // 5 – Stellar Crown · Legend · Grand 4-arm golden spiral, most spectacular
+    // Like M101/NGC 1232 — grand design spiral, all stellar populations present, golden majesty
+    n:140000, arms:4, radius:380, coreR:44,
+    tight:0.038, thick:0.048, hasBar:false, isEllip:false,
+    // core=brilliant white, c1=cream-gold, c2=gold, c3=purple-blue outer, ch=cyan HII
+    cx:'#ffffff', c1:'#fff4cc', c2:'#ddaa00', c3:'#4433bb', ch:'#00ffee',
+    gc:'#ffffee',
+    pos:[-105,10,-2820], rot:[0.26,0.14,-0.02],
   },
 ];
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  HELPERS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 const startMs = Date.parse(CONFIG.startDate);
 const endMs   = Date.parse(CONFIG.endDate);
 const spanMs  = endMs - startMs;
 const ME      = CONFIG.players.find(p => p.isCurrentUser);
 
-function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
-function lerp(a,b,t){ return a+(b-a)*t; }
+const clamp = (v,lo,hi) => v<lo?lo:v>hi?hi:v;
+const lerp  = (a,b,t)   => a+(b-a)*t;
 
 function interpPts(player, t){
   const dayMs = startMs + clamp(t,0,1)*spanMs;
   const d = player.data;
   for(let i=0;i<d.length-1;i++){
     const aMs=Date.parse(d[i].date), bMs=Date.parse(d[i+1].date);
-    if(dayMs>=aMs&&dayMs<=bMs){
+    if(dayMs>=aMs && dayMs<=bMs){
       const bl=(dayMs-aMs)/(bMs-aMs);
       return Math.round(lerp(d[i].pts, d[i+1].pts, bl));
     }
   }
-  return t<0.5?d[0].pts:d[d.length-1].pts;
+  return t<0.5 ? d[0].pts : d[d.length-1].pts;
 }
 
 function resolveLevel(pts){
@@ -339,34 +418,35 @@ function fmtDate(ms){
   return new Date(ms).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
 }
 
-// ═══════════════════════════════════════════════════════
+const ROMAN = ['I','II','III','IV','V'];
+
+// ═══════════════════════════════════════════════════
 //  THREE.JS SETUP
-// ═══════════════════════════════════════════════════════
-const canvas = document.getElementById('three-canvas');
+// ═══════════════════════════════════════════════════
+const canvas   = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000004, 1);
+renderer.setClearColor(0x000002, 1);
 
 const scene  = new THREE.Scene();
-scene.fog    = new THREE.FogExp2(0x000004, 0.00048);
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.5, 5000);
+scene.fog    = new THREE.FogExp2(0x000002, 0.00042);
+const camera = new THREE.PerspectiveCamera(68, window.innerWidth/window.innerHeight, 0.5, 5500);
 
-// ═══════════════════════════════════════════════════════
-//  STAR GLOW TEXTURE (round softlight disk)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  TEXTURES
+// ═══════════════════════════════════════════════════
 function mkStarTex(sz=128){
-  const c=document.createElement('canvas');
-  c.width=c.height=sz;
+  const c=document.createElement('canvas'); c.width=c.height=sz;
   const ctx=c.getContext('2d');
   const g=ctx.createRadialGradient(sz/2,sz/2,0, sz/2,sz/2,sz/2);
   g.addColorStop(0,   'rgba(255,255,255,1.0)');
-  g.addColorStop(0.08,'rgba(255,255,255,0.95)');
-  g.addColorStop(0.25,'rgba(255,255,255,0.60)');
-  g.addColorStop(0.55,'rgba(255,255,255,0.18)');
-  g.addColorStop(1,   'rgba(255,255,255,0.0)');
-  ctx.fillStyle=g;
-  ctx.fillRect(0,0,sz,sz);
+  g.addColorStop(0.06,'rgba(255,255,255,0.95)');
+  g.addColorStop(0.20,'rgba(255,255,255,0.65)');
+  g.addColorStop(0.50,'rgba(255,255,255,0.22)');
+  g.addColorStop(0.80,'rgba(255,255,255,0.05)');
+  g.addColorStop(1.0, 'rgba(255,255,255,0.0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,sz,sz);
   return new THREE.CanvasTexture(c);
 }
 
@@ -376,17 +456,18 @@ function mkGlowTex(hex, sz=256){
   const g=ctx.createRadialGradient(sz/2,sz/2,0, sz/2,sz/2,sz/2);
   const col=new THREE.Color(hex);
   const r=Math.round(col.r*255), gr=Math.round(col.g*255), b=Math.round(col.b*255);
-  g.addColorStop(0,  `rgba(${r},${gr},${b},1)`);
-  g.addColorStop(0.2,`rgba(${r},${gr},${b},0.65)`);
-  g.addColorStop(0.6,`rgba(${r},${gr},${b},0.15)`);
-  g.addColorStop(1,  `rgba(${r},${gr},${b},0)`);
+  g.addColorStop(0,   `rgba(${r},${gr},${b},1)`);
+  g.addColorStop(0.18,`rgba(${r},${gr},${b},0.70)`);
+  g.addColorStop(0.50,`rgba(${r},${gr},${b},0.22)`);
+  g.addColorStop(0.80,`rgba(${r},${gr},${b},0.05)`);
+  g.addColorStop(1.0, `rgba(${r},${gr},${b},0)`);
   ctx.fillStyle=g; ctx.fillRect(0,0,sz,sz);
   return new THREE.CanvasTexture(c);
 }
 
 const STAR_TEX = mkStarTex(128);
 
-// Shared ShaderMaterial – per-particle size + color + round texture
+// Shared point-sprite material
 const GALAXY_MAT = new THREE.ShaderMaterial({
   uniforms:{ uTex:{ value: STAR_TEX } },
   vertexShader:`
@@ -396,8 +477,8 @@ const GALAXY_MAT = new THREE.ShaderMaterial({
     void main(){
       vColor = aColor;
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = aSize * (520.0 / -mv.z);
-      gl_PointSize = clamp(gl_PointSize, 0.4, 150.0);
+      gl_PointSize = aSize * (540.0 / -mv.z);
+      gl_PointSize = clamp(gl_PointSize, 0.3, 160.0);
       gl_Position  = projectionMatrix * mv;
     }
   `,
@@ -406,28 +487,44 @@ const GALAXY_MAT = new THREE.ShaderMaterial({
     varying vec3 vColor;
     void main(){
       vec4 t = texture2D(uTex, gl_PointCoord);
-      if(t.a < 0.004) discard;
+      if(t.a < 0.003) discard;
       gl_FragColor = vec4(vColor * t.rgb, t.a);
     }
   `,
-  transparent:true,
-  blending:THREE.AdditiveBlending,
-  depthWrite:false,
+  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
 });
 
-// ═══════════════════════════════════════════════════════
-//  BACKGROUND STARS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  BACKGROUND STARS  (sparse inter-galactic field)
+// ═══════════════════════════════════════════════════
 (function buildBgStars(){
-  const n=12000, pos=new Float32Array(n*3), col=new Float32Array(n*3), siz=new Float32Array(n);
+  const n=18000;
+  const pos=new Float32Array(n*3), col=new Float32Array(n*3), siz=new Float32Array(n);
+  const STAR_COLORS=[
+    [0.65,0.70,1.00], // O/B blue-white
+    [0.82,0.88,1.00], // A white-blue
+    [1.00,1.00,1.00], // F white
+    [1.00,0.98,0.88], // G yellow-white
+    [1.00,0.88,0.66], // K orange
+    [1.00,0.72,0.44], // M red-orange
+  ];
+  const weights=[0.05,0.12,0.22,0.28,0.20,0.13]; // luminosity-weighted
+  const cumW=[]; let s=0;
+  for(const w of weights){ s+=w; cumW.push(s); }
+
   for(let i=0;i<n;i++){
-    const th=Math.random()*Math.PI*2, ph=Math.acos(Math.random()*2-1), r=1000+Math.random()*2500;
-    pos[i*3]  =r*Math.sin(ph)*Math.cos(th);
-    pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
-    pos[i*3+2]=r*Math.cos(ph);
-    const temp=Math.random();
-    col[i*3]  =0.70+temp*0.30; col[i*3+1]=0.78+temp*0.18; col[i*3+2]=0.90+temp*0.10;
-    siz[i]=0.3+Math.random()*1.1;
+    const th=Math.random()*Math.PI*2, ph=Math.acos(Math.random()*2-1);
+    const rv=Math.random(); let dist=1200+rv*rv*2200;
+    pos[i*3]  =dist*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=dist*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2]=dist*Math.cos(ph);
+    // pick stellar type
+    const rnd=Math.random(); let ci=0;
+    for(let k=0;k<cumW.length;k++){ if(rnd<cumW[k]){ ci=k; break; } }
+    const [cr,cg,cb]=STAR_COLORS[ci];
+    const bright=0.35+Math.random()*0.65;
+    col[i*3]=cr*bright; col[i*3+1]=cg*bright; col[i*3+2]=cb*bright;
+    siz[i]=0.25+Math.random()*1.2*(Math.random()<0.04?4:1); // occasional bright star
   }
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
@@ -436,191 +533,226 @@ const GALAXY_MAT = new THREE.ShaderMaterial({
   scene.add(new THREE.Points(geo, GALAXY_MAT.clone()));
 })();
 
-// ═══════════════════════════════════════════════════════
-//  GALAXY BUILDER
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  GALAXY BUILDER  (natural stellar populations)
+// ═══════════════════════════════════════════════════
 function hex2col(h){ return new THREE.Color(h); }
 
 function buildGalaxy(def){
   const { n, arms, radius, coreR, tight, thick, hasBar, barLen=0, isEllip,
-          cx, c1, c2, c3, ch } = def;
+          cx, c1, c2, c3, ch, gc } = def;
 
   const CORE=hex2col(cx), INN=hex2col(c1), MID=hex2col(c2), OUT=hex2col(c3);
-  const HII = ch ? hex2col(ch) : null;
+  const HII=ch?hex2col(ch):null, GC=gc?hex2col(gc):null;
 
   const pos=new Float32Array(n*3), col=new Float32Array(n*3), siz=new Float32Array(n);
   let written=0;
 
-  function push(x,y,z, color, size){
+  function push(x,y,z,color,size){
     if(written>=n) return;
     const i=written++;
     pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
-    col[i*3]=Math.min(1,color.r); col[i*3+1]=Math.min(1,color.g); col[i*3+2]=Math.min(1,color.b);
+    col[i*3]=Math.min(1,color.r);
+    col[i*3+1]=Math.min(1,color.g);
+    col[i*3+2]=Math.min(1,color.b);
     siz[i]=size;
   }
 
-  const nCore   = Math.floor(n * 0.14);
-  const nArm    = Math.floor(n * 0.52);
-  const nDisk   = Math.floor(n * 0.18);
-  const nDust   = Math.floor(n * 0.08);
-  const nHII    = ch ? Math.floor(n * 0.045) : 0;
-  const nHalo   = n - nCore - nArm - nDisk - nDust - nHII;
+  // Particle budget per component
+  const nCore = Math.floor(n * 0.13);
+  const nArm  = Math.floor(n * 0.50);
+  const nDisk = Math.floor(n * 0.16);
+  const nDust = Math.floor(n * 0.07);
+  const nHII  = ch ? Math.floor(n * 0.05) : 0;
+  const nGC   = gc ? Math.floor(n * 0.025) : 0;
+  const nHalo = n - nCore - nArm - nDisk - nDust - nHII - nGC;
 
-  // ── Core ──────────────────────────────────────────────
+  // ── Bulge / Core ──────────────────────────────────────────────────
   for(let i=0;i<nCore;i++){
-    const r=Math.pow(Math.random(),2.2)*coreR;
-    const th=Math.random()*Math.PI*2, ph=(Math.random()-0.5)*Math.PI*0.5;
+    const r = Math.pow(Math.random(),1.8) * coreR;
+    const th=Math.random()*Math.PI*2, ph=(Math.random()-0.5)*Math.PI*0.55;
     const x=Math.cos(th)*Math.cos(ph)*r;
-    const y=Math.sin(ph)*r*0.45;
+    const y=Math.sin(ph)*r * 0.50;
     const z=Math.sin(th)*Math.cos(ph)*r;
     const t=r/coreR;
-    const c=CORE.clone().lerp(INN, t*0.5);
-    // bright boost near center
-    const boost=1+Math.max(0,1-r/8)*8;
-    c.multiplyScalar(boost);
-    push(x,y,z, c, 0.8+Math.random()*2.8*(1-t));
+    // Bulge: warm core colour blending outward
+    const c=CORE.clone().lerp(INN, t*0.45);
+    // Central brightness spike
+    const boost=1.0 + Math.max(0,1-r/10)*10;
+    c.multiplyScalar(clamp(boost,1,12));
+    push(x,y,z, c, 0.7+Math.random()*2.8*(1-t*0.7));
   }
 
   if(isEllip){
-    // Elliptical: De Vaucouleurs r^(1/4) profile, 3D ellipsoid
-    const a=radius, b=radius*0.72, cv=radius*0.45;
+    // Elliptical: de Vaucouleurs-like r^(1/4) profile, triaxial shape
+    const ax=radius, ay=radius*0.70, az=radius*0.50;
     const total=nArm+nDisk+nDust+nHalo;
     for(let i=0;i<total;i++){
-      // sample r with de Vaucouleurs-like distribution
       const u=Math.random();
-      const r=radius*Math.pow(u, 0.5); // concentrate near center
+      // Concentrate stars toward center (r^0.5 gives reasonable distribution)
+      const r=radius * Math.pow(u, 0.5);
       const th=Math.random()*Math.PI*2, ph=Math.acos(Math.random()*2-1);
       const x=r*Math.sin(ph)*Math.cos(th);
-      const y=r*Math.sin(ph)*Math.sin(th)*(cv/a);
-      const z=r*Math.cos(ph)*(b/a);
+      const y=r*Math.sin(ph)*Math.sin(th)*(ay/ax);
+      const z=r*Math.cos(ph)*(az/ax);
       const t=r/radius;
-      const bright=Math.exp(-7.6*(Math.pow(t,0.25)-1));
-      const c=INN.clone().lerp(OUT, Math.sqrt(t));
-      c.multiplyScalar(Math.max(0.05, bright));
-      push(x,y,z, c, 0.4+Math.random()*0.9*(1-t*0.5));
+      // Smooth colour gradient: warm inner → cooler outer
+      const c=INN.clone().lerp(OUT, Math.pow(t,0.6));
+      // de Vaucouleurs brightness: bright inner falloff
+      const bright=Math.exp(-6.0*(Math.pow(t+0.01,0.25)-1));
+      c.multiplyScalar(Math.max(0.04, bright));
+      push(x,y,z, c, 0.35+Math.random()*0.85*(1-t*0.5));
     }
-    // done for elliptical
   } else {
-    // ── Spiral / barred ──────────────────────────────────
+    // ── Spiral arms ─────────────────────────────────────────────────
     for(let i=0;i<nArm;i++){
       const arm=i%arms;
-      const r=coreR*0.7+Math.pow(Math.random(),0.58)*(radius-coreR);
+      // Bias toward outer regions for spiral contrast
+      const r=coreR*0.6 + Math.pow(Math.random(),0.52)*(radius-coreR);
       const base=(arm/arms)*Math.PI*2;
-      const angle=base+r*tight+(Math.random()-0.5)*0.55;
-      const spread=Math.PI*0.07*(1+r/radius);
+      const angle=base + r*tight + (Math.random()-0.5)*0.60;
+      const spread=Math.PI*0.065*(1+r/radius*1.2);
       const da=(Math.random()-0.5)*spread*2;
       const finalAng=angle+da;
-      let x,y,z;
 
+      let x,y,z;
       if(hasBar && r < barLen){
-        // bar: elongated along one axis
-        const bx=(Math.random()-0.5)*barLen*1.8*(r/barLen);
-        const bz=(Math.random()-0.5)*barLen*0.14;
-        x=bx; y=(Math.random()-0.5)*3; z=bz;
+        // Bar: elongated ellipsoid along major axis
+        const bFrac=r/barLen;
+        const bx=(Math.random()-0.5)*barLen*1.9*bFrac;
+        const bz=(Math.random()-0.5)*barLen*0.16*bFrac;
+        x=bx; y=(Math.random()-0.5)*4; z=bz;
       } else {
-        const sr=(Math.random()-0.5)*r*0.09;
+        const sr=(Math.random()-0.5)*r*0.08;
         x=Math.cos(finalAng)*(r+sr);
-        y=(Math.random()-0.5)*Math.max(0.8,r*thick);
+        y=(Math.random()-0.5)*Math.max(0.8, r*thick);
         z=Math.sin(finalAng)*(r+sr);
       }
+
       const t=r/radius;
-      const c= t<0.28 ? INN.clone().lerp(CORE, (0.28-t)/0.28*0.5)
-                      : (t<0.6 ? INN.clone().lerp(MID,(t-0.28)/0.32)
-                               : MID.clone().lerp(OUT,(t-0.6)/0.4));
-      // brightness variation: brighter young stars along arm center
-      const armCenter=Math.abs(da)/spread;
-      c.multiplyScalar(0.9+armCenter*0.7+Math.random()*0.7);
-      push(x,y,z, c, 0.5+Math.random()*1.1*(1-t*0.35));
+      // Natural colour: inner arm bluish-white OB stars, outer dimmer
+      let c;
+      if(hasBar && r < barLen){
+        // Bar stars: warm from core colour
+        c=CORE.clone().lerp(INN,0.4+(Math.random()-0.5)*0.2);
+      } else if(t < 0.25){
+        c=INN.clone().lerp(CORE, (0.25-t)/0.25*0.3);
+      } else if(t < 0.60){
+        c=INN.clone().lerp(MID, (t-0.25)/0.35);
+      } else {
+        c=MID.clone().lerp(OUT, (t-0.60)/0.40);
+      }
+      // Arm-centre brightening: stars right in the arm are brighter
+      const armCentral=1.0 - Math.abs(da)/spread;
+      c.multiplyScalar(0.70 + armCentral*0.80 + Math.random()*0.55);
+      push(x,y,z, c, 0.45+Math.random()*1.0*(1-t*0.30));
     }
 
-    // ── Disk background ───────────────────────────────────
+    // ── Disk (diffuse inter-arm population) ─────────────────────────
     for(let i=0;i<nDisk;i++){
-      const r=Math.pow(Math.random(),0.45)*radius;
+      const r=Math.pow(Math.random(),0.42)*radius;
       const th=Math.random()*Math.PI*2;
       const x=Math.cos(th)*r, z=Math.sin(th)*r;
-      const y=(Math.random()-0.5)*Math.max(0.5,r*thick*0.6);
+      const y=(Math.random()-0.5)*Math.max(0.5,r*thick*0.55);
       const t=r/radius;
-      const c=INN.clone().lerp(OUT,t).multiplyScalar(0.15+Math.random()*0.28);
-      push(x,y,z, c, 0.3+Math.random()*0.5);
+      const c=INN.clone().lerp(OUT,t).multiplyScalar(0.10+Math.random()*0.22);
+      push(x,y,z, c, 0.25+Math.random()*0.55);
     }
 
-    // ── Dust lanes (dark abs. features) ─────────────────
+    // ── Dust lanes (dark absorption, positioned offset from arm centres) ──
     for(let i=0;i<nDust;i++){
-      const arm=i%arms;
-      const r=coreR*1.1+Math.random()*(radius*0.8-coreR);
-      const base=(arm/arms)*Math.PI*2;
-      const angle=base+r*tight+(Math.random()-0.5)*0.35;
-      const da=(Math.random()-0.5)*0.25;
+      const arm=(i+1)%arms; // offset by 1 to sit between arms
+      const r=coreR*1.05 + Math.random()*(radius*0.82-coreR);
+      const base=((arm+0.5)/arms)*Math.PI*2;
+      const angle=base+r*tight+(Math.random()-0.5)*0.30;
+      const da=(Math.random()-0.5)*0.22;
       const x=Math.cos(angle+da)*r;
-      const y=(Math.random()-0.5)*r*thick*0.5;
+      const y=(Math.random()-0.5)*r*thick*0.45;
       const z=Math.sin(angle+da)*r;
-      // very dark brownish-grey to absorb light in render
-      const c=new THREE.Color(0.04,0.02,0.02);
-      push(x,y,z, c, 0.6+Math.random()*0.8);
+      // Very dark: barely visible, mostly subtracts via low alpha colour
+      const dustGrey=0.018+Math.random()*0.025;
+      const c=new THREE.Color(dustGrey, dustGrey*0.7, dustGrey*0.5);
+      push(x,y,z, c, 0.7+Math.random()*1.2);
     }
 
-    // ── HII regions / bright star clusters ───────────────
+    // ── HII regions / star-forming clumps ───────────────────────────
     if(HII){
       for(let i=0;i<nHII;i++){
         const arm=i%arms;
-        const r=radius*(0.25+Math.random()*0.65);
+        const r=radius*(0.22+Math.random()*0.70);
         const base=(arm/arms)*Math.PI*2;
-        const angle=base+r*tight+(Math.random()-0.5)*0.18;
+        const angle=base+r*tight+(Math.random()-0.5)*0.14;
         const x=Math.cos(angle)*r;
-        const y=(Math.random()-0.5)*r*thick*0.3;
+        const y=(Math.random()-0.5)*r*thick*0.28;
         const z=Math.sin(angle)*r;
-        const c=HII.clone().multiplyScalar(3.0+Math.random()*2.0);
-        push(x,y,z, c, 1.1+Math.random()*2.2);
+        // HII: bright, clustered, slightly different size variation
+        const c=HII.clone().multiplyScalar(2.8+Math.random()*2.5);
+        push(x,y,z, c, 0.9+Math.random()*2.4);
       }
     }
 
-    // ── Stellar halo (sparse, faint, extended) ────────────
+    // ── Globular clusters (scattered above/below disk) ───────────────
+    if(GC){
+      for(let i=0;i<nGC;i++){
+        // GCs: compact clusters scattered in halo with slight disk preference
+        const r=radius*(0.15+Math.random()*0.75);
+        const th=Math.random()*Math.PI*2, ph=(Math.random()-0.5)*Math.PI*(0.5+Math.random()*0.5);
+        const x=Math.cos(th)*Math.cos(ph)*r;
+        const y=Math.sin(ph)*r*0.85;
+        const z=Math.sin(th)*Math.cos(ph)*r;
+        const c=GC.clone().multiplyScalar(0.55+Math.random()*0.65);
+        push(x,y,z, c, 1.0+Math.random()*2.0);
+      }
+    }
+
+    // ── Extended stellar halo ────────────────────────────────────────
     for(let i=0;i<nHalo;i++){
-      const r=radius*(0.4+Math.random()*0.9);
-      const th=Math.random()*Math.PI*2, ph=(Math.random()-0.5)*Math.PI*0.35;
+      const r=radius*(0.45+Math.random()*0.85);
+      const th=Math.random()*Math.PI*2, ph=(Math.random()-0.5)*Math.PI*0.32;
       const x=Math.cos(th)*Math.cos(ph)*r;
-      const y=Math.sin(ph)*r*0.3;
+      const y=Math.sin(ph)*r*0.28;
       const z=Math.sin(th)*Math.cos(ph)*r;
-      const c=OUT.clone().multiplyScalar(0.08+Math.random()*0.15);
-      push(x,y,z, c, 0.2+Math.random()*0.4);
+      const c=OUT.clone().multiplyScalar(0.05+Math.random()*0.12);
+      push(x,y,z, c, 0.18+Math.random()*0.38);
     }
   }
 
+  // Build BufferGeometry
   const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(pos,  3));
-  geo.setAttribute('aColor',  new THREE.BufferAttribute(col,  3));
-  geo.setAttribute('aSize',   new THREE.BufferAttribute(siz,  1));
-  const pts=new THREE.Points(geo, GALAXY_MAT.clone());
+  geo.setAttribute('position',new THREE.BufferAttribute(pos.slice(0,written*3),3));
+  geo.setAttribute('aColor',  new THREE.BufferAttribute(col.slice(0,written*3),3));
+  geo.setAttribute('aSize',   new THREE.BufferAttribute(siz.slice(0,written),  1));
 
+  const pts=new THREE.Points(geo, GALAXY_MAT.clone());
   const grp=new THREE.Group();
   grp.add(pts);
 
   // Core glow sprite
-  const cSpr=new THREE.Sprite(new THREE.SpriteMaterial({
-    map:mkGlowTex(cx,256), blending:THREE.AdditiveBlending, transparent:true, opacity:0.55, depthWrite:false
+  const cGlow=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:mkGlowTex(cx,256), blending:THREE.AdditiveBlending, transparent:true, opacity:0.65, depthWrite:false
   }));
-  cSpr.scale.set(coreR*4.5, coreR*4.5, 1);
-  grp.add(cSpr);
+  cGlow.scale.set(coreR*5.5, coreR*5.5, 1);
+  grp.add(cGlow);
 
-  // Disk edge halo
-  const dSpr=new THREE.Sprite(new THREE.SpriteMaterial({
-    map:mkGlowTex(c2,512), blending:THREE.AdditiveBlending, transparent:true, opacity:0.22, depthWrite:false
+  // Disk glow (wide, faint halo)
+  const dGlow=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:mkGlowTex(c2,512), blending:THREE.AdditiveBlending, transparent:true, opacity:0.18, depthWrite:false
   }));
-  dSpr.scale.set(radius*6.0, radius*(isEllip?4.0:1.2), 1);
-  grp.add(dSpr);
+  dGlow.scale.set(radius*6.5, radius*(isEllip?3.8:1.4), 1);
+  grp.add(dGlow);
 
-  // Nebula wisps (3 colored sprites scattered around)
-  const wispColors=[c1,c2,c3];
-  for(let w=0;w<3;w++){
-    const wx=(Math.random()-0.5)*radius*1.8;
-    const wy=(Math.random()-0.5)*radius*0.25;
-    const wz=(Math.random()-0.5)*radius*1.8;
+  // 4 nebula wisps at different positions
+  const wispCols=[c1,c2,c3,ch||c1];
+  for(let w=0;w<4;w++){
+    const wx=(Math.random()-0.5)*radius*1.9;
+    const wy=(Math.random()-0.5)*radius*0.22;
+    const wz=(Math.random()-0.5)*radius*1.9;
     const wSpr=new THREE.Sprite(new THREE.SpriteMaterial({
-      map:mkGlowTex(wispColors[w],256), blending:THREE.AdditiveBlending, transparent:true,
-      opacity:0.06+Math.random()*0.08, depthWrite:false
+      map:mkGlowTex(wispCols[w],256), blending:THREE.AdditiveBlending, transparent:true,
+      opacity:0.04+Math.random()*0.09, depthWrite:false
     }));
     wSpr.position.set(wx,wy,wz);
-    const ws=60+Math.random()*120;
+    const ws=80+Math.random()*150;
     wSpr.scale.set(ws,ws,1);
     grp.add(wSpr);
   }
@@ -628,9 +760,9 @@ function buildGalaxy(def){
   return grp;
 }
 
-// ═══════════════════════════════════════════════════════
-//  BUILD 5 GALAXIES
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  BUILD GALAXIES
+// ═══════════════════════════════════════════════════
 const galaxyGroups = GALAXY_DEFS.map(def => {
   const grp = buildGalaxy(def);
   grp.position.set(...def.pos);
@@ -639,205 +771,232 @@ const galaxyGroups = GALAXY_DEFS.map(def => {
   return grp;
 });
 
-// ═══════════════════════════════════════════════════════
-//  CAMERA PATH (visits near each galaxy)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  CAMERA PATH
+// ═══════════════════════════════════════════════════
 const CAM_CURVE = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(  90, 165,  760),   // far start (G1 ahead)
-  new THREE.Vector3(  10,  98,  430),   // approaching G1
-  new THREE.Vector3(-150,  52,  140),   // passing G1
-  new THREE.Vector3(-250,  18, -190),   // between G1-G2
-  new THREE.Vector3(-275,   4, -580),   // near G2 (pos -155, 15, -690)
-  new THREE.Vector3(-370, -18, -920),   // past G2
-  new THREE.Vector3(-260, -30,-1200),   // approaching G3
-  new THREE.Vector3( -95, -38,-1450),   // near G3 (pos -55,-25,-1385)
-  new THREE.Vector3( -60, -18,-1720),   // past G3
-  new THREE.Vector3(-250,   8,-1970),   // approaching G4
-  new THREE.Vector3(-370,  28,-2180),   // near G4 (pos -265,22,-2085)
-  new THREE.Vector3(-400,  12,-2450),   // past G4
-  new THREE.Vector3(-280,  -4,-2650),   // approaching G5
-  new THREE.Vector3(-155,   6,-2900),   // near G5 (pos -100,8,-2785) CLOSEST
-  new THREE.Vector3( -80, -18,-3200),   // past G5 – journey done
+  new THREE.Vector3(  80, 175,  810),  // start: G1 ahead
+  new THREE.Vector3(  10, 100,  480),  // approaching G1
+  new THREE.Vector3(-155,  55,  120),  // fly through G1
+  new THREE.Vector3(-265,  22, -190),  // between G1-G2
+  new THREE.Vector3(-280,   6, -595),  // near G2
+  new THREE.Vector3(-380, -20, -940),  // past G2
+  new THREE.Vector3(-265, -32,-1215),  // approaching G3
+  new THREE.Vector3( -90, -40,-1460),  // through G3
+  new THREE.Vector3( -55, -22,-1730),  // past G3
+  new THREE.Vector3(-255,  10,-2000),  // approaching G4
+  new THREE.Vector3(-375,  30,-2200),  // near G4
+  new THREE.Vector3(-400,  14,-2470),  // past G4
+  new THREE.Vector3(-290,   0,-2650),  // approaching G5
+  new THREE.Vector3(-160,   8,-2930),  // arrive G5 — hover FRONT
+  new THREE.Vector3(  60,  28,-2870),  // G5 side arc
+  new THREE.Vector3(  90,  -8,-2760),  // G5 overhead
+  new THREE.Vector3( -80,  20,-2840),  // G5 close final view ★ linger
 ]);
 
-// lookAt targets per galaxy (where camera watches as it passes)
 const LOOK_TARGETS = GALAXY_DEFS.map(d => new THREE.Vector3(...d.pos));
 
-// ═══════════════════════════════════════════════════════
-//  HUD WIRING
-// ═══════════════════════════════════════════════════════
-const hudDate   = document.getElementById('hud-date');
-const hudMap    = document.getElementById('hud-map');
-const hudLevel  = document.getElementById('hud-level');
-const hudPts    = document.getElementById('hud-pts');
-const hudProg   = document.getElementById('hud-prog');
-const hudRecap  = document.getElementById('hud-recap');
-const galTitle  = document.getElementById('galaxy-title');
-const lbEl      = document.getElementById('leaderboard');
-const lvlUpEl   = document.getElementById('lvl-up');
-const luBig     = document.getElementById('lu-big');
-const luSub     = document.getElementById('lu-sub');
-const warpEl    = document.getElementById('warp-flash');
+// ═══════════════════════════════════════════════════
+//  DOM REFERENCES
+// ═══════════════════════════════════════════════════
+const hudDate  = document.getElementById('hud-date');
+const hudMap   = document.getElementById('hud-map');
+const hudLevel = document.getElementById('hud-level');
+const hudPts   = document.getElementById('hud-pts');
+const hudProg  = document.getElementById('hud-prog');
+const hudRecap = document.getElementById('hud-recap');
+const galTitle = document.getElementById('galaxy-title');
+const galRank  = document.getElementById('galaxy-rank');
+const lbEl     = document.getElementById('leaderboard');
+const lvlUpEl  = document.getElementById('lvl-up');
+const luBig    = document.getElementById('lu-big');
+const luSub    = document.getElementById('lu-sub');
+const warpEl   = document.getElementById('warp-flash');
+const pipsEl   = document.getElementById('pips');
 
 document.getElementById('prog-start').textContent = fmtDate(startMs);
 document.getElementById('prog-end').textContent   = fmtDate(endMs);
 
-// Build LB rows
+// Level pips
+CONFIG.levels.forEach((_,i)=>{
+  const pip=document.createElement('div');
+  pip.className='pip'; pip.id=`pip-${i}`;
+  pipsEl.appendChild(pip);
+});
+
+// Leaderboard rows
 const lbRows = CONFIG.players.map(p => {
   const row=document.createElement('div');
   row.className='lb-row'+(p.isCurrentUser?' me':'');
-  row.innerHTML=`<span class="lb-dot" style="background:${p.color}"></span><span class="lb-name">${p.name}</span><span class="lb-pts" id="lb-${p.name}">—</span>`;
+  row.innerHTML=`<span class="lb-dot" style="background:${p.color}"></span>`+
+    `<span class="lb-name">${p.name}</span>`+
+    `<span class="lb-pts" id="lb-${p.name}">—</span>`;
   lbEl.appendChild(row);
-  return { player:p, ptsEl:row.querySelector(`#lb-${p.name}`) };
+  return { player:p, ptsEl:document.getElementById(`lb-${p.name}`) };
 });
 
-// ═══════════════════════════════════════════════════════
-//  THEME TRANSITION
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  THEME SYSTEM
+// ═══════════════════════════════════════════════════
 const root = document.documentElement;
 let curAccent  = new THREE.Color(CONFIG.levels[0].accent);
 let curAccent2 = new THREE.Color(CONFIG.levels[0].accent2);
 let tgtAccent  = curAccent.clone();
 let tgtAccent2 = curAccent2.clone();
-const tmpC=new THREE.Color();
+let curLvIdx   = 0;
 
-function setThemeTarget(lvl){
-  tgtAccent.set(lvl.accent);
-  tgtAccent2.set(lvl.accent2);
-  root.style.setProperty('--glow', lvl.glow);
-  root.style.setProperty('--dim',  lvl.dim);
+function setThemeTarget(lv, lvIdx){
+  tgtAccent.set(lv.accent);
+  tgtAccent2.set(lv.accent2);
+  root.style.setProperty('--glow', lv.glow);
+  root.style.setProperty('--dim',  lv.dim);
+  root.style.setProperty('--prog-col', lv.prog);
+  document.body.setAttribute('data-lv', String(lvIdx));
+  // Pips
+  CONFIG.levels.forEach((_,i)=>{
+    const pip=document.getElementById(`pip-${i}`);
+    if(pip) pip.classList.toggle('active', i<=lvIdx);
+  });
 }
 
 function tickTheme(){
-  curAccent.lerp(tgtAccent,   0.018);
-  curAccent2.lerp(tgtAccent2, 0.018);
+  curAccent.lerp(tgtAccent,   0.022);
+  curAccent2.lerp(tgtAccent2, 0.022);
   root.style.setProperty('--accent',  '#'+curAccent.getHexString());
   root.style.setProperty('--accent2', '#'+curAccent2.getHexString());
 }
 
-// ═══════════════════════════════════════════════════════
-//  LEVEL-UP STATE
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  LEVEL UP
+// ═══════════════════════════════════════════════════
 let prevLvlName = CONFIG.levels[0].name;
-let prevLvlThreshold = 0;
-let luTimer = null;
+let prevThresh  = 0;
+let luTimer     = null;
 
-function triggerLevelUp(lv){
-  luBig.textContent = lv.name;
-  luSub.textContent = `Entering ${lv.galaxy}`;
+function triggerLevelUp(lv, lvIdx){
+  luBig.textContent=lv.name;
+  luSub.textContent=`Entering ${lv.galaxy}`;
   lvlUpEl.classList.add('show');
-  // warp flash
   warpEl.classList.add('pop');
-  setTimeout(()=>warpEl.classList.remove('pop'), 320);
+  setTimeout(()=>warpEl.classList.remove('pop'), 280);
   if(luTimer) clearTimeout(luTimer);
-  luTimer = setTimeout(()=>lvlUpEl.classList.remove('show'), 3500);
+  luTimer=setTimeout(()=>lvlUpEl.classList.remove('show'), 2200);
 }
 
-// ═══════════════════════════════════════════════════════
-//  CAMERA LOOK-AT SMOOTH TRACKING
-// ═══════════════════════════════════════════════════════
-const lookCur  = new THREE.Vector3(0,0,0);
-const lookTgt  = new THREE.Vector3(0,0,0);
+// ═══════════════════════════════════════════════════
+//  CAMERA LOOK-AT
+// ═══════════════════════════════════════════════════
+const lookCur=new THREE.Vector3(0,0,0);
+const lookTgt=new THREE.Vector3(0,0,0);
 
 function getLookTarget(t, camPos){
-  // Find which galaxy is currently closest (by t segment)
-  const gi = Math.min(4, Math.floor(t * 5));
-  // weight: mostly look at current galaxy, partially forward
-  const galPos = LOOK_TARGETS[gi];
-  const pathT  = CAM_CURVE.getTangent(Math.min(0.999, t));
-  const fwd    = camPos.clone().add(pathT.multiplyScalar(250));
-  // Early in segment: look at galaxy. Late in segment: drift forward
-  const segT   = (t * 5) - gi;  // 0→1 within this galaxy's segment
-  // Look at galaxy during 0.1→0.7 of segment, drift forward outside
-  const galaxyW = clamp(1 - Math.pow((segT-0.4)*2.5, 2), 0, 1);
+  // Use 5 galaxy segments for the first 5/17 of the path,
+  // then linger on Galaxy 5 for the remaining path points
+  const totalPts=17;
+  const galaxyPts=13; // first 13 points cover 5 galaxies (every ~2.6 pts per galaxy)
+  const gi=Math.min(4, Math.floor(t * (galaxyPts/totalPts) * 5));
+  const galPos=LOOK_TARGETS[gi];
+  const pathT=CAM_CURVE.getTangent(Math.min(0.999,t));
+  const fwd=camPos.clone().add(pathT.multiplyScalar(200));
+  const segT=(t * 5)-gi;
+  const galaxyW=clamp(1-Math.pow((segT-0.4)*2.8,2),0,1);
   return fwd.lerp(galPos, galaxyW);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  RECAP LINES
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 const RECAPS=[
-  (u,lv,pts,gal)=>`${u.name} is traversing ${gal} — ${pts.toLocaleString()} pts`,
-  (u,lv,pts,gal)=>`${lv} status · ${pts.toLocaleString()} pts in the cluster`,
-  (u,lv,pts,gal)=>`Crossing ${gal} as ${lv}…`,
-  (u,lv,pts,gal)=>`${pts.toLocaleString()} pts · ${lv} · ${gal}`,
+  (u,lv,pts,gal)=>`Cluster Odyssey: ${u.name} now at ${pts.toLocaleString()} pts`,
+  (u,lv,pts,gal)=>`${lv} · crossing ${gal} — ${pts.toLocaleString()} pts`,
+  (u,lv,pts,gal)=>`${u.name} soars through ${gal} as ${lv}`,
+  (u,lv,pts,gal)=>`${pts.toLocaleString()} cluster points · ${lv} rank`,
+  (u,lv,pts,gal)=>`Today: ${fmtDate(endMs)} · Final level — ${lv} · ${gal}`,
 ];
 let lastRecapIdx=-1;
 
-// camera shake
+// Camera shake
 function shake(ts){
   return new THREE.Vector3(
-    Math.sin(ts*0.00038+1.2)*1.8,
-    Math.cos(ts*0.00055+0.6)*1.1,
-    Math.sin(ts*0.00028+2.3)*0.9
+    Math.sin(ts*0.00042+1.3)*1.6,
+    Math.cos(ts*0.00058+0.7)*0.95,
+    Math.sin(ts*0.00031+2.5)*0.80
   );
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  ANIMATION LOOP
-// ═══════════════════════════════════════════════════════
-let t0=null;
-let prevT = 0; // track previous t to detect loop reset
+// ═══════════════════════════════════════════════════
+let t0=null, prevT=0;
 
 function animate(ts){
   requestAnimationFrame(animate);
   if(!t0) t0=ts;
-  const t = ((ts-t0)%CONFIG.playbackMs) / CONFIG.playbackMs;
+  const t=((ts-t0)%CONFIG.playbackMs)/CONFIG.playbackMs;
 
-  // Detect loop reset and re-initialize level tracker + dismiss any active banner
-  if(t < prevT - 0.5){
-    prevLvlName = CONFIG.levels[0].name;
-    prevLvlThreshold = 0;
+  // Detect loop reset
+  if(t < prevT-0.5){
+    prevLvlName=CONFIG.levels[0].name;
+    prevThresh=0;
+    curLvIdx=0;
     lvlUpEl.classList.remove('show');
     if(luTimer){ clearTimeout(luTimer); luTimer=null; }
   }
-  prevT = t;
+  prevT=t;
 
-  // Camera position + subtle shake
-  const base = CAM_CURVE.getPoint(t);
-  const sk   = shake(ts);
+  // Camera
+  const base=CAM_CURVE.getPoint(t);
+  const sk=shake(ts);
   camera.position.copy(base).add(sk);
 
-  // Camera look-at (smooth)
+  // LookAt
   lookTgt.copy(getLookTarget(t, base));
-  lookCur.lerp(lookTgt, 0.022);
+  lookCur.lerp(lookTgt, 0.025);
   camera.lookAt(lookCur);
 
-  // Galaxy slow individual rotations (each at different rate)
-  galaxyGroups.forEach((g,i) => {
-    g.rotation.y += 0.000035 * (1 + i*0.12);
+  // Galaxy rotations (slow, each unique rate)
+  galaxyGroups.forEach((g,i)=>{
+    g.rotation.y += 0.000032*(1+i*0.15);
   });
 
   // Data
-  const pts = interpPts(ME, t);
-  const lv  = resolveLevel(pts);
+  const pts   = interpPts(ME, t);
+  const lv    = resolveLevel(pts);
+  const lvIdx = CONFIG.levels.indexOf(lv);
   const dayMs = startMs + t*spanMs;
-  const gi  = Math.min(4, Math.floor(t * 5)); // galaxy index by position in journey
-  const gDef= GALAXY_DEFS[gi];
 
-  // Level change — only fire when advancing to a HIGHER level (not on loop reset)
-  if(lv.name !== prevLvlName && lv.threshold > prevLvlThreshold){
-    prevLvlName = lv.name;
-    prevLvlThreshold = lv.threshold;
-    triggerLevelUp(lv);
-    setThemeTarget(lv);
+  // Galaxy index: first 13/17 of curve = 5 galaxies, last 4/17 = lingering at G5
+  const pathFrac=13/17;
+  const gi=Math.min(4, t < pathFrac ? Math.floor(t/pathFrac*5) : 4);
+
+  // Level change detection
+  if(lv.name !== prevLvlName && lv.threshold > prevThresh){
+    prevLvlName=lv.name;
+    prevThresh=lv.threshold;
+    curLvIdx=lvIdx;
+    triggerLevelUp(lv, lvIdx);
+    setThemeTarget(lv, lvIdx);
+  } else if(lvIdx !== curLvIdx){
+    curLvIdx=lvIdx;
+    setThemeTarget(lv, lvIdx);
   }
   tickTheme();
 
-  // HUD update
+  // HUD
   hudDate.textContent  = fmtDate(dayMs);
   hudMap.textContent   = lv.galaxy;
   hudLevel.textContent = lv.name;
   hudPts.textContent   = pts.toLocaleString();
   hudProg.style.width  = (t*100).toFixed(2)+'%';
   galTitle.textContent = CONFIG.levels[gi].galaxy;
+  galRank.textContent  = `Level ${CONFIG.levels[gi].roman} · ${CONFIG.levels[gi].name}`;
 
   const ri=Math.min(RECAPS.length-1, Math.floor(t*RECAPS.length));
   if(ri!==lastRecapIdx){ lastRecapIdx=ri; hudRecap.textContent=RECAPS[ri](ME,lv.name,pts,lv.galaxy); }
 
   // Leaderboard
-  const allP=CONFIG.players.map(p=>({p, pts:interpPts(p,t)})).sort((a,b)=>b.pts-a.pts);
-  allP.forEach(item=>{
+  const allP=CONFIG.players.map(p=>({p,pts:interpPts(p,t)})).sort((a,b)=>b.pts-a.pts);
+  allP.forEach((item,rank)=>{
     const row=lbRows.find(r=>r.player===item.p);
     if(row) row.ptsEl.textContent=item.pts.toLocaleString();
   });
@@ -851,9 +1010,8 @@ window.addEventListener('resize',()=>{
   renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
-// init theme
-setThemeTarget(CONFIG.levels[0]);
-
+// Init
+setThemeTarget(CONFIG.levels[0], 0);
 requestAnimationFrame(animate);
 </script>
 </body>
