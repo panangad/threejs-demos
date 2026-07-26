@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galaxy Cluster Odyssey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000008;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #e8f4ff;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* Vignette */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center,
+        transparent 50%,
+        rgba(0, 0, 10, 0.55) 100%
+      );
+    }
+
+    /* HUD root */
+    .hud {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ── TOP BAR ── */
+    .hud-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 1.5rem 2rem;
+      gap: 1rem;
+    }
+
+    .glass-chip {
+      background: rgba(4, 8, 28, 0.72);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 3rem;
+      padding: 0.65rem 1.3rem;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .chip-label {
+      font-size: 0.64rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 0.22rem;
+    }
+
+    .chip-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #8deefc;
+    }
+
+    /* Center zone chip */
+    .hud-zone {
+      text-align: center;
+    }
+
+    .zone-name {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 0.3rem;
+    }
+
+    .level-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    /* Points chip */
+    .hud-points {
+      text-align: right;
+    }
+
+    .points-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #8deefc;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    /* ── BOTTOM BAR ── */
+    .hud-bottom {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1.5rem 2rem 2rem;
+    }
+
+    .recap-line {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      margin-bottom: 1rem;
+      min-height: 1.2em;
+      transition: opacity 0.6s ease;
+    }
+
+    .progress-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.55rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ecdc4, #8deefc, #c6a8ff);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(141,238,252,0.6);
+      transition: width 0.12s linear;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── LEVEL UP BANNER ── */
+    .level-up {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .level-up.show {
+      opacity: 1;
+    }
+
+    .lu-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.5rem;
+    }
+
+    .lu-title {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, #8deefc 0%, #c6a8ff 50%, #8dffb3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(141,238,252,0.5));
+    }
+
+    .lu-sub {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.65);
+      margin-top: 0.6rem;
+    }
+
+    /* ── BACK BUTTON ── */
+    .back-btn {
+      position: fixed;
+      top: 1.5rem;
+      right: 2rem;
+      z-index: 20;
+      pointer-events: all;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(4, 8, 28, 0.72);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 3rem;
+      padding: 0.65rem 1.3rem;
+      backdrop-filter: blur(14px);
+      font-size: 0.82rem;
+      font-family: inherit;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .back-btn:hover {
+      color: #8deefc;
+      border-color: rgba(141,238,252,0.35);
+      background: rgba(141,238,252,0.08);
+    }
+
+    /* ── TITLE (bottom-right) ── */
+    .hud-title {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 3;
+      pointer-events: none;
+      text-align: right;
+    }
+
+    .hud-title .eyebrow {
+      font-size: 0.58rem;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .hud-title .main {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.55);
+      margin-top: 0.2rem;
+    }
+
+    /* ── PLAYER LEADERBOARD (collapsible side panel) ── */
+    .leaderboard {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(4, 8, 28, 0.65);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 2rem;
+      padding: 0.45rem 0.9rem 0.45rem 0.55rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.5s ease;
+    }
+
+    .lb-row.current {
+      border-color: rgba(141,238,252,0.3);
+      background: rgba(141,238,252,0.08);
+    }
+
+    .lb-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .lb-name {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.65);
+      min-width: 2.5rem;
+    }
+
+    .lb-row.current .lb-name {
+      color: #8deefc;
+      font-weight: 600;
+    }
+
+    .lb-pts {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+      padding-left: 0.6rem;
+    }
+
+    .lb-row.current .lb-pts {
+      color: rgba(141,238,252,0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="three-canvas"></canvas>
+  <div class="vignette"></div>
+
+  <!-- Back button -->
+  <a class="back-btn" href="#" onclick="history.length > 1 ? history.back() : (window.location = './../../'); return false;">
+    ← Missions
+  </a>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-top">
+      <div class="glass-chip">
+        <div class="chip-label">Date</div>
+        <div class="chip-value" id="hud-date">May 1, 2026</div>
+      </div>
+      <div class="glass-chip hud-zone">
+        <div class="zone-name" id="hud-map">Orion Gate</div>
+        <div class="level-name" id="hud-level">Scout</div>
+      </div>
+      <div class="glass-chip hud-points">
+        <div class="chip-label">Points</div>
+        <div class="points-value" id="hud-points">1,200</div>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <p class="recap-line" id="hud-recap">Beginning the odyssey…</p>
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="hud-progress"></div>
+        </div>
+        <div class="progress-labels">
+          <span id="prog-start">May 1, 2026</span>
+          <span id="prog-end">Jul 26, 2026</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Level-up banner -->
+  <div class="level-up" id="level-up-banner">
+    <div class="lu-eyebrow">Level Up</div>
+    <div class="lu-title" id="lu-title">Navigator</div>
+    <div class="lu-sub" id="lu-sub">Entering Aurora Drift</div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard" id="leaderboard"></div>
+
+  <!-- Title watermark -->
+  <div class="hud-title">
+    <div class="eyebrow">Demo</div>
+    <div class="main">Galaxy Cluster Odyssey</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+  <script>
+  'use strict';
+  // ─────────────────────────────────────────────
+  //  HARDCODED DATA
+  // ─────────────────────────────────────────────
+  const CONFIG = {
+    startDate: '2026-05-01',
+    endDate:   '2026-07-26',
+    playbackMs: 42000,   // full loop duration
+
+    levels: [
+      { name: 'Scout',     map: 'Orion Gate',   threshold: 0    },
+      { name: 'Navigator', map: 'Aurora Drift',  threshold: 1400 },
+      { name: 'Captain',   map: 'Nebula Run',    threshold: 2800 },
+      { name: 'Legend',    map: 'Cosmic Reef',   threshold: 4200 }
+    ],
+
+    players: [
+      {
+        name: 'You', isCurrentUser: true, color: '#8deefc',
+        data: [
+          { date: '2026-05-01', points: 1200 },
+          { date: '2026-05-05', points: 1380 },
+          { date: '2026-05-09', points: 1640 },
+          { date: '2026-05-13', points: 1820 },
+          { date: '2026-05-19', points: 2100 },
+          { date: '2026-05-25', points: 2460 },
+          { date: '2026-06-02', points: 2820 },
+          { date: '2026-06-10', points: 3180 },
+          { date: '2026-06-17', points: 3570 },
+          { date: '2026-06-24', points: 3920 },
+          { date: '2026-07-01', points: 4300 },
+          { date: '2026-07-09', points: 4690 },
+          { date: '2026-07-18', points: 5080 },
+          { date: '2026-07-26', points: 5460 },
+        ]
+      },
+      {
+        name: 'Lyra', color: '#ff8bd0',
+        data: [
+          { date: '2026-05-01', points: 980  },
+          { date: '2026-05-05', points: 1120 },
+          { date: '2026-05-09', points: 1280 },
+          { date: '2026-05-13', points: 1410 },
+          { date: '2026-05-19', points: 1580 },
+          { date: '2026-05-25', points: 1720 },
+          { date: '2026-06-02', points: 1940 },
+          { date: '2026-06-10', points: 2140 },
+          { date: '2026-06-17', points: 2360 },
+          { date: '2026-06-24', points: 2510 },
+          { date: '2026-07-01', points: 2680 },
+          { date: '2026-07-09', points: 2870 },
+          { date: '2026-07-18', points: 3080 },
+          { date: '2026-07-26', points: 3320 },
+        ]
+      },
+      {
+        name: 'Rook', color: '#8dffb3',
+        data: [
+          { date: '2026-05-01', points: 860  },
+          { date: '2026-05-05', points: 960  },
+          { date: '2026-05-09', points: 1100 },
+          { date: '2026-05-13', points: 1260 },
+          { date: '2026-05-19', points: 1430 },
+          { date: '2026-05-25', points: 1590 },
+          { date: '2026-06-02', points: 1780 },
+          { date: '2026-06-10', points: 1980 },
+          { date: '2026-06-17', points: 2220 },
+          { date: '2026-06-24', points: 2390 },
+          { date: '2026-07-01', points: 2570 },
+          { date: '2026-07-09', points: 2760 },
+          { date: '2026-07-18', points: 2970 },
+          { date: '2026-07-26', points: 3200 },
+        ]
+      },
+      {
+        name: 'Nia', color: '#ffd69f',
+        data: [
+          { date: '2026-05-01', points: 760  },
+          { date: '2026-05-05', points: 880  },
+          { date: '2026-05-09', points: 1010 },
+          { date: '2026-05-13', points: 1170 },
+          { date: '2026-05-19', points: 1310 },
+          { date: '2026-05-25', points: 1450 },
+          { date: '2026-06-02', points: 1630 },
+          { date: '2026-06-10', points: 1790 },
+          { date: '2026-06-17', points: 2080 },
+          { date: '2026-06-24', points: 2250 },
+          { date: '2026-07-01', points: 2410 },
+          { date: '2026-07-09', points: 2590 },
+          { date: '2026-07-18', points: 2810 },
+          { date: '2026-07-26', points: 3040 },
+        ]
+      },
+      {
+        name: 'Tavi', color: '#c6a8ff',
+        data: [
+          { date: '2026-05-01', points: 700  },
+          { date: '2026-05-05', points: 820  },
+          { date: '2026-05-09', points: 940  },
+          { date: '2026-05-13', points: 1080 },
+          { date: '2026-05-19', points: 1210 },
+          { date: '2026-05-25', points: 1360 },
+          { date: '2026-06-02', points: 1510 },
+          { date: '2026-06-10', points: 1680 },
+          { date: '2026-06-17', points: 1950 },
+          { date: '2026-06-24', points: 2110 },
+          { date: '2026-07-01', points: 2280 },
+          { date: '2026-07-09', points: 2470 },
+          { date: '2026-07-18', points: 2690 },
+          { date: '2026-07-26', points: 2900 },
+        ]
+      },
+    ]
+  };
+
+  // ─────────────────────────────────────────────
+  //  HELPERS
+  // ─────────────────────────────────────────────
+  const startMs = Date.parse(CONFIG.startDate);
+  const endMs   = Date.parse(CONFIG.endDate);
+  const spanMs  = endMs - startMs;
+  const currentUser = CONFIG.players.find(p => p.isCurrentUser);
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function interpolatePoints(player, t) {
+    const dayMs = startMs + clamp(t, 0, 1) * spanMs;
+    const data = player.data;
+    for (let i = 0; i < data.length - 1; i++) {
+      const aMs = Date.parse(data[i].date);
+      const bMs = Date.parse(data[i + 1].date);
+      if (dayMs >= aMs && dayMs <= bMs) {
+        const blend = (dayMs - aMs) / (bMs - aMs);
+        return Math.round(lerp(data[i].points, data[i + 1].points, blend));
+      }
+    }
+    return t < 0.5 ? data[0].points : data[data.length - 1].points;
+  }
+
+  function resolveLevel(points) {
+    let lv = CONFIG.levels[0];
+    for (const l of CONFIG.levels) if (points >= l.threshold) lv = l;
+    return lv;
+  }
+
+  function fmtDate(ms) {
+    return new Date(ms).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // ─────────────────────────────────────────────
+  //  THREE.JS SCENE
+  // ─────────────────────────────────────────────
+  const canvas = document.getElementById('three-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000008);
+  scene.fog = new THREE.FogExp2(0x000008, 0.00065);
+
+  const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.5, 3500);
+
+  // ── Background stars ──────────────────────────
+  (function buildStars() {
+    const count = 9000;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.acos(Math.random() * 2 - 1);
+      const r     = 900 + Math.random() * 1600;
+      pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i*3+2] = r * Math.cos(phi);
+
+      const temp = Math.random();
+      col[i*3]   = 0.75 + temp * 0.25;
+      col[i*3+1] = 0.80 + temp * 0.18;
+      col[i*3+2] = 0.90 + temp * 0.10;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 1.1,
+      vertexColors: true,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.88
+    })));
+  })();
+
+  // ── Galaxy ────────────────────────────────────
+  const galaxyGroup = new THREE.Group();
+  scene.add(galaxyGroup);
+
+  (function buildGalaxy() {
+    const count  = 18000;
+    const radius = 190;
+    const geo    = new THREE.BufferGeometry();
+    const pos    = new Float32Array(count * 3);
+    const col    = new Float32Array(count * 3);
+    const siz    = new Float32Array(count);
+
+    const cCore = new THREE.Color('#ffe8b0'); // warm core
+    const cMid  = new THREE.Color('#a0c8ff'); // blue-white mid
+    const cRim  = new THREE.Color('#4466ff'); // deep blue rim
+
+    for (let i = 0; i < count; i++) {
+      const arm  = i % 2;
+      const rr   = Math.pow(Math.random(), 0.5) * radius;
+      const base = arm * Math.PI;
+      const ang  = base + rr * 0.048 + (Math.random() - 0.5) * 0.55;
+      const scatter = rr * (0.03 + Math.random() * 0.12);
+      const da   = (Math.random() - 0.5) * 0.4;
+
+      const x = Math.cos(ang + da) * (rr + (Math.random()-0.5)*scatter);
+      const z = Math.sin(ang + da) * (rr + (Math.random()-0.5)*scatter);
+      const y = (Math.random() - 0.5) * Math.max(0.8, rr * 0.06);
+
+      pos[i*3]   = x;
+      pos[i*3+1] = y;
+      pos[i*3+2] = z;
+
+      const t = rr / radius;
+      const c = t < 0.25
+        ? cCore.clone().lerp(cMid, t / 0.25)
+        : cMid.clone().lerp(cRim, (t - 0.25) / 0.75);
+
+      // Core brightness boost
+      const boost = 1 + Math.max(0, (1 - rr / 18)) * 4;
+      col[i*3]   = Math.min(1, c.r * boost);
+      col[i*3+1] = Math.min(1, c.g * boost);
+      col[i*3+2] = Math.min(1, c.b * boost);
+
+      siz[i] = rr < 15 ? 1.8 + Math.random() * 2 : 0.4 + Math.random() * 0.9;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+    geo.setAttribute('size',     new THREE.BufferAttribute(siz, 1));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.75,
+      vertexColors: true,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    galaxyGroup.add(new THREE.Points(geo, mat));
+
+    // Core glow sprite
+    const sprTex = buildGlowTexture('#fff8e7', 256);
+    const sprMat = new THREE.SpriteMaterial({
+      map: sprTex,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      opacity: 0.6,
+      depthWrite: false,
+    });
+    const spr = new THREE.Sprite(sprMat);
+    spr.scale.set(55, 55, 1);
+    galaxyGroup.add(spr);
+
+    // Outer disk halo sprite
+    const haloTex = buildGlowTexture('#5577ff', 512);
+    const haloMat = new THREE.SpriteMaterial({
+      map: haloTex,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      opacity: 0.18,
+      depthWrite: false
+    });
+    const halo = new THREE.Sprite(haloMat);
+    halo.scale.set(550, 120, 1); // flattened: simulates the disk edge glow
+    galaxyGroup.add(halo);
+  })();
+
+  // Tilt galaxy for "edge-on from slight elevation" view
+  // 0 = perfectly horizontal disk, π/2 = face-on
+  // We want ~8° tilt from edge-on so spiral structure is visible
+  galaxyGroup.rotation.z = Math.PI * 0.04;  // slight lean
+  galaxyGroup.rotation.x = Math.PI * 0.09;  // show disk structure slightly
+
+  // ── Nebula clouds ─────────────────────────────
+  (function buildNebulae() {
+    const defs = [
+      { color: '#3355cc', x: -180, y:  30, z:  80, sx: 340, sy: 160, o: 0.13 },
+      { color: '#662288', x:  120, y: -40, z: -60, sx: 280, sy: 200, o: 0.10 },
+      { color: '#224488', x:   60, y:  80, z: 200, sx: 320, sy: 180, o: 0.08 },
+      { color: '#115544', x: -250, y: -20, z:-200, sx: 260, sy: 140, o: 0.09 },
+      { color: '#441166', x:  200, y:  60, z:  50, sx: 200, sy: 140, o: 0.07 },
+    ];
+    for (const d of defs) {
+      const tex = buildGlowTexture(d.color, 256);
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: d.o,
+        depthWrite: false
+      });
+      const spr = new THREE.Sprite(mat);
+      spr.position.set(d.x, d.y, d.z);
+      spr.scale.set(d.sx, d.sy, 1);
+      scene.add(spr);
+    }
+  })();
+
+  function buildGlowTexture(hexColor, size) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    const rgb = new THREE.Color(hexColor);
+    const r = Math.round(rgb.r * 255), gr = Math.round(rgb.g * 255), b = Math.round(rgb.b * 255);
+    g.addColorStop(0,   `rgba(${r},${gr},${b},1)`);
+    g.addColorStop(0.25,`rgba(${r},${gr},${b},0.7)`);
+    g.addColorStop(0.6, `rgba(${r},${gr},${b},0.2)`);
+    g.addColorStop(1,   `rgba(${r},${gr},${b},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(c);
+  }
+
+  // ── Dust lane particles near galaxy plane ─────
+  (function buildDust() {
+    const count = 1800;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const r   = 30 + Math.random() * 155;
+      pos[i*3]   = Math.cos(ang) * r + (Math.random()-0.5)*20;
+      pos[i*3+1] = (Math.random()-0.5) * 2.5;
+      pos[i*3+2] = Math.sin(ang) * r + (Math.random()-0.5)*20;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    galaxyGroup.add(new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0x112233,
+      size: 4.5,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.NormalBlending,
+      depthWrite: false
+    })));
+  })();
+
+  // ─────────────────────────────────────────────
+  //  CAMERA PATH
+  // ─────────────────────────────────────────────
+  // Galaxy is at origin. Camera starts far in front (+z), flies past the
+  // galaxy and ends up far behind and to the side (-z, -x).
+  const camCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(  20, 110,  700),
+    new THREE.Vector3( -40,  80,  460),
+    new THREE.Vector3(-120,  48,  230),
+    new THREE.Vector3(-220,  18,   50),
+    new THREE.Vector3(-340,  -8, -200),
+    new THREE.Vector3(-480, -35, -440),
+    new THREE.Vector3(-600, -60, -680),
+  ]);
+
+  // ─────────────────────────────────────────────
+  //  HUD ELEMENTS
+  // ─────────────────────────────────────────────
+  const hudDate     = document.getElementById('hud-date');
+  const hudMap      = document.getElementById('hud-map');
+  const hudLevel    = document.getElementById('hud-level');
+  const hudPoints   = document.getElementById('hud-points');
+  const hudProgress = document.getElementById('hud-progress');
+  const hudRecap    = document.getElementById('hud-recap');
+  const lbEl        = document.getElementById('leaderboard');
+  const luBanner    = document.getElementById('level-up-banner');
+  const luTitle     = document.getElementById('lu-title');
+  const luSub       = document.getElementById('lu-sub');
+
+  document.getElementById('prog-start').textContent = fmtDate(startMs);
+  document.getElementById('prog-end').textContent   = fmtDate(endMs);
+
+  // Build leaderboard rows once
+  const lbRows = CONFIG.players.map(p => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p.isCurrentUser ? ' current' : '');
+    row.innerHTML = `
+      <span class="lb-dot" style="background:${p.color}"></span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-pts" data-player="${p.name}">—</span>
+    `;
+    lbEl.appendChild(row);
+    return { el: row, ptsEl: row.querySelector('.lb-pts'), player: p };
+  });
+
+  let prevLevelName = CONFIG.levels[0].name;
+  let luTimer = null;
+  let lastRecapIdx = -1;
+
+  function triggerLevelUp(level) {
+    luTitle.textContent = level.name;
+    luSub.textContent   = `Entering ${level.map}`;
+    luBanner.classList.add('show');
+    if (luTimer) clearTimeout(luTimer);
+    luTimer = setTimeout(() => luBanner.classList.remove('show'), 3200);
+  }
+
+  const recapTemplates = [
+    (u, lv, pts, map) => `${u.name} is crossing ${map} with ${pts.toLocaleString()} pts`,
+    (u, lv, pts, map) => `${lv} — ${pts.toLocaleString()} points earned`,
+    (u, lv, pts, map) => `Flying through ${map} as ${lv}…`,
+    (u, lv, pts, map) => `${pts.toLocaleString()} pts · ${lv} status active`,
+  ];
+
+  // ─────────────────────────────────────────────
+  //  CAMERA SHAKE (subtle breathing)
+  // ─────────────────────────────────────────────
+  const shakeAmp = 1.4;
+  function cameraShake(t, ts) {
+    return new THREE.Vector3(
+      Math.sin(ts * 0.00041 + 1.3) * shakeAmp,
+      Math.cos(ts * 0.00057 + 0.7) * shakeAmp * 0.6,
+      Math.sin(ts * 0.00031 + 2.1) * shakeAmp * 0.5
+    );
+  }
+
+  // lookAt smoothing
+  const lookTarget  = new THREE.Vector3(0, 0, 0);
+  const lookCurrent = new THREE.Vector3(0, 0, 0);
+
+  // ─────────────────────────────────────────────
+  //  MAIN ANIMATION LOOP
+  // ─────────────────────────────────────────────
+  let startTime = null;
+
+  function animate(ts) {
+    requestAnimationFrame(animate);
+
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) % CONFIG.playbackMs;
+    const t = elapsed / CONFIG.playbackMs;
+
+    // ── Camera position ──
+    const baseCamPos = camCurve.getPoint(t);
+    const shake = cameraShake(t, ts);
+    camera.position.copy(baseCamPos).add(shake);
+
+    // ── Camera look-at: track galaxy center with blend ──
+    // Early in journey: look toward galaxy ahead (t→0: galaxy is far in front)
+    // Mid journey: look at galaxy from the side
+    // Late journey: galaxy behind us, look forward-ish
+    const galaxyWorld = new THREE.Vector3(0, 0, 0);
+
+    // As t increases, blend from pure lookAt-galaxy to "forward along path"
+    const pathTangent = camCurve.getTangent(Math.min(0.999, t));
+    const forwardLook = camera.position.clone().add(pathTangent.multiplyScalar(300));
+
+    const galaxyBlend = clamp(1 - Math.pow(t * 1.4, 2), 0, 1);
+    lookTarget.lerpVectors(forwardLook, galaxyWorld, galaxyBlend);
+    lookCurrent.lerp(lookTarget, 0.025);
+    camera.lookAt(lookCurrent);
+
+    // ── Galaxy slow rotation ──
+    galaxyGroup.rotation.y = ts * 0.000055;
+
+    // ── Data state ──
+    const pts  = interpolatePoints(currentUser, t);
+    const lv   = resolveLevel(pts);
+    const dayMs = startMs + t * spanMs;
+
+    // Level-up detection
+    if (lv.name !== prevLevelName) {
+      prevLevelName = lv.name;
+      triggerLevelUp(lv);
+    }
+
+    // ── HUD update ──
+    hudDate.textContent   = fmtDate(dayMs);
+    hudMap.textContent    = lv.map;
+    hudLevel.textContent  = lv.name;
+    hudPoints.textContent = pts.toLocaleString();
+    hudProgress.style.width = (t * 100).toFixed(2) + '%';
+
+    // Recap
+    const recapIdx = Math.floor(t * recapTemplates.length);
+    if (recapIdx !== lastRecapIdx) {
+      lastRecapIdx = recapIdx;
+      hudRecap.textContent = recapTemplates[recapIdx](currentUser, lv.name, pts, lv.map);
+    }
+
+    // ── Leaderboard update ──
+    const allPts = CONFIG.players.map(p => ({ p, pts: interpolatePoints(p, t) }));
+    allPts.sort((a, b) => b.pts - a.pts);
+    allPts.forEach((item, rank) => {
+      const row = lbRows.find(r => r.player === item.p);
+      if (row) row.ptsEl.textContent = item.pts.toLocaleString();
+    });
+
+    // ── Render ──
+    renderer.render(scene, camera);
+  }
+
+  // ─────────────────────────────────────────────
+  //  RESIZE
+  // ─────────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

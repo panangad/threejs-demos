@@ -1,0 +1,69 @@
+<div class="shell">
+
+  <div class="backdrop-glow glow-a"></div>
+  <div class="backdrop-glow glow-b"></div>
+
+  <header class="top-nav">
+    <div class="logo-mark">
+      <span class="logo-icon">✦</span>
+      <span class="logo-text">threejs-demos</span>
+    </div>
+    <p class="site-tagline">Interactive 3-D experiences</p>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <p class="hero-eyebrow">Demo Gallery</p>
+      <h1 class="hero-heading">Choose your mission</h1>
+      <p class="hero-sub">
+        Select a demo below to launch a full-screen interactive experience.
+        More missions are added regularly.
+      </p>
+    </section>
+
+    <div class="demo-grid">
+      <article
+        class="demo-card"
+        *ngFor="let demo of demos"
+        [style.--card-accent]="demo.color"
+        (click)="openDemo(demo)"
+        role="button"
+        [attr.aria-label]="'Launch ' + demo.title"
+        tabindex="0"
+        (keydown.enter)="openDemo(demo)"
+        (keydown.space)="openDemo(demo)">
+
+        <div class="card-glow"></div>
+
+        <header class="card-header">
+          <div class="card-tags">
+            <span class="tag" *ngFor="let tag of demo.tags">{{ tag }}</span>
+          </div>
+        </header>
+
+        <div class="card-body">
+          <h2 class="card-title">{{ demo.title }}</h2>
+          <p class="card-tagline">{{ demo.tagline }}</p>
+          <p class="card-desc">{{ demo.description }}</p>
+        </div>
+
+        <footer class="card-footer">
+          <span class="launch-cta">Launch →</span>
+        </footer>
+      </article>
+
+      <!-- Placeholder future card -->
+      <article class="demo-card demo-card--placeholder" aria-hidden="true">
+        <div class="placeholder-inner">
+          <span class="placeholder-icon">✦</span>
+          <p class="placeholder-text">More missions coming soon</p>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>panangad / threejs-demos</span>
+  </footer>
+
+</div>
