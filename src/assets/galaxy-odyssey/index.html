@@ -784,10 +784,12 @@ function animate(ts){
   if(!t0) t0=ts;
   const t = ((ts-t0)%CONFIG.playbackMs) / CONFIG.playbackMs;
 
-  // Detect loop reset and re-initialize level tracker
+  // Detect loop reset and re-initialize level tracker + dismiss any active banner
   if(t < prevT - 0.5){
     prevLvlName = CONFIG.levels[0].name;
     prevLvlThreshold = 0;
+    lvlUpEl.classList.remove('show');
+    if(luTimer){ clearTimeout(luTimer); luTimer=null; }
   }
   prevT = t;
 
