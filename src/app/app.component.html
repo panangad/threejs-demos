@@ -1,1 +1,61 @@
-<router-outlet></router-outlet>
+<div class="app-shell">
+  <div class="backdrop"></div>
+  <div class="galaxy-scene" aria-label="Animated galaxy timeline from launch to the latest data point">
+    <div class="galaxy-core"></div>
+    <div class="nebula nebula-one"></div>
+    <div class="nebula nebula-two"></div>
+    <div class="spiral-arm arm-a"></div>
+    <div class="spiral-arm arm-b"></div>
+    <div class="spiral-arm arm-c"></div>
+    <div class="star-field"></div>
+
+    <div class="player-orb" *ngFor="let player of currentPlayers" [ngStyle]="getPlayerStyle(player)">
+      <span class="player-label">{{ player.name }}</span>
+    </div>
+  </div>
+
+  <div class="hud">
+    <section class="hero">
+      <p class="eyebrow">Galaxy Cluster Odyssey</p>
+      <h1>From the first spark to the current surge.</h1>
+      <p class="lead">A smooth, side-view voyage through each day of your interstellar climb. Every orbit carries the current points, level, and map for your crew.</p>
+
+      <div class="controls">
+        <button type="button" (click)="restartTimeline()">Replay timeline</button>
+        <div class="timeline-pill">{{ currentDayLabel }}</div>
+      </div>
+
+      <div class="timeline-card">
+        <div class="timeline-track">
+          <div class="timeline-fill" [style.width.%]="timelinePercent"></div>
+        </div>
+        <div class="timeline-meta">
+          <span>{{ timelineDays[0].label }}</span>
+          <span>{{ timelineDays[timelineDays.length - 1].label }}</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="recap-card">
+        <p class="card-label">Current recap</p>
+        <h2>{{ currentDayLabel }}</h2>
+        <p>{{ currentRecap }}</p>
+      </div>
+
+      <div class="players-list">
+        <article class="player-card" *ngFor="let player of currentPlayers">
+          <div class="player-title">
+            <span class="dot" [style.background]="player.color"></span>
+            <h3>{{ player.name }}</h3>
+          </div>
+          <p class="points">{{ player.points | number }} pts</p>
+          <div class="meta-row">
+            <span>{{ player.level }}</span>
+            <span>{{ player.currentMap }}</span>
+          </div>
+        </article>
+      </div>
+    </aside>
+  </div>
+</div>
